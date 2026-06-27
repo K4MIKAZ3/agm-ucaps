@@ -110,12 +110,25 @@ export async function updateUsuario(
     const id = String(formData.get("id"));
     const nombre = String(formData.get("nombre") || "").trim();
     const username = cleanUsername(String(formData.get("username") || ""));
-    const rol = String(formData.get("rol") || "viewer") as UserRole;
+    const rolRaw = formData.get("rol");
 
     if (!id || !nombre) return actionError("Datos incompletos");
-    if (!ROLES.includes(rol)) return actionError("Rol inválido");
-    if (id === currentUserId && rol !== "super_admin") {
-      return actionError("No puedes quitarte el rol de super admin");
+
+    let rol: UserRole;
+    if (id === currentUserId) {
+      const { data: current } = await supabase
+        .from("profiles")
+        .select("rol")
+        .eq("id", id)
+        .single();
+      if (!current) return actionError("Usuario no encontrado");
+      rol = current.rol as UserRole;
+      if (rolRaw && String(rolRaw) !== rol) {
+        return actionError("No puedes cambiar tu propio rol");
+      }
+    } else {
+      rol = String(rolRaw || "viewer") as UserRole;
+      if (!ROLES.includes(rol)) return actionError("Rol inválido");
     }
 
     const { error } = await supabase

@@ -497,6 +497,12 @@ tbody tr:nth-child(even) {
   min-width: 0;
 }
 
+.input-readonly {
+  display: inline-block;
+  background: #f4f7fc;
+  color: #5a7099;
+}
+
 .btn-xs {
   border: 0;
   border-radius: 6px;

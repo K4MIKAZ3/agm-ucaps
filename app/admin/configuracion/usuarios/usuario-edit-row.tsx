@@ -55,18 +55,22 @@ export default function UsuarioEditRow({ usuario: u, isSelf, extraActions }: Pro
             placeholder="—"
           />
           <span className="user-email">{u.email}</span>
-          <select
-            name="rol"
-            defaultValue={u.rol}
-            className="input-sm"
-            disabled={isSelf}
-          >
-            {ROLES.map((r) => (
-              <option key={r.value} value={r.value}>
-                {r.label}
-              </option>
-            ))}
-          </select>
+          {isSelf ? (
+            <>
+              <input type="hidden" name="rol" value={u.rol} />
+              <span className="input-sm input-readonly">
+                {ROLES.find((r) => r.value === u.rol)?.label ?? u.rol}
+              </span>
+            </>
+          ) : (
+            <select name="rol" defaultValue={u.rol} className="input-sm">
+              {ROLES.map((r) => (
+                <option key={r.value} value={r.value}>
+                  {r.label}
+                </option>
+              ))}
+            </select>
+          )}
           <span className={u.activo ? "badge b-fn" : "badge b-ps"}>
             {u.activo ? "Activo" : "Inactivo"}
           </span>
