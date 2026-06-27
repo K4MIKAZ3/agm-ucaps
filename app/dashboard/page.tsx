@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import LogoutButton from "./logout-button";
 import DashboardCharts from "./dashboard-charts";
-import { canManageProyectos } from "@/lib/auth";
+import { canManageProyectos, canManageUsuarios } from "@/lib/auth";
 
 type Kpi = {
   total_proyectos: number;
@@ -119,6 +119,11 @@ export default async function DashboardPage() {
           {canManageProyectos(profile?.rol) && (
             <Link className="btn-link" href="/admin/proyectos">
               Gestionar proyectos
+            </Link>
+          )}
+          {canManageUsuarios(profile?.rol) && (
+            <Link className="btn-link" href="/admin/configuracion/usuarios">
+              Configuración
             </Link>
           )}
           <LogoutButton />

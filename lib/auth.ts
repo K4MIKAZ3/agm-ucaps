@@ -22,6 +22,22 @@ export function canManageProyectos(rol?: string | null) {
   return rol === "super_admin" || rol === "admin";
 }
 
+export function canEditAvance(rol?: string | null) {
+  return rol === "super_admin" || rol === "admin" || rol === "editor";
+}
+
+export function canAccessProyectosAdmin(rol?: string | null) {
+  return canManageProyectos(rol) || rol === "editor";
+}
+
 export function canManageCatalogos(rol?: string | null) {
   return rol === "super_admin";
+}
+
+export function canManageUsuarios(rol?: string | null) {
+  return rol === "super_admin";
+}
+
+export function isProfileActive(profile: { activo?: boolean } | null) {
+  return profile?.activo !== false;
 }

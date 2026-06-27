@@ -1,8 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { createProyecto } from "@/app/actions/proyectos";
+import { getProfile, canManageProyectos } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
 export default async function NuevoProyectoPage() {
+  const { profile } = await getProfile();
+  if (!canManageProyectos(profile?.rol)) redirect("/admin/proyectos");
+
   const supabase = await createClient();
 
   const [{ data: municipios }, { data: estados }] = await Promise.all([

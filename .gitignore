@@ -32,5 +32,9 @@ scripts/mega_batch_*.sql
 scripts/import_output.sql
 scripts/*.json
 scripts/*.js
+scripts/emit_batches.py
 !scripts/import_ucaps_excel.py
+
+# generated import SQL (run via Supabase, not in repo)
+supabase/migrations/06_import_excel_items.sql
 

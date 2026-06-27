@@ -30,17 +30,37 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const isLogin = request.nextUrl.pathname.startsWith("/login");
+  const isPublicAuth =
+    isLogin ||
+    request.nextUrl.pathname.startsWith("/login/recuperar") ||
+    request.nextUrl.pathname.startsWith("/login/restablecer");
 
-  if (!user && !isLogin) {
+  if (!user && !isPublicAuth) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  if (user && isLogin) {
+  if (user && isLogin && !request.nextUrl.pathname.includes("/restablecer")) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
+  }
+
+  if (user && !isPublicAuth) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("activo")
+      .eq("id", user.id)
+      .single();
+
+    if (profile && profile.activo === false) {
+      await supabase.auth.signOut();
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.searchParams.set("error", "cuenta_desactivada");
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;
