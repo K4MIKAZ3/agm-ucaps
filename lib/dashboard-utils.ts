@@ -11,6 +11,7 @@ export type DashboardProyecto = {
   facturado: number;
   pendiente_facturar: number;
   estado: string | null;
+  estado_codigo: string | null;
   estado_color: string | null;
   fecha_terminacion: string | null;
   fecha_terminacion_nota: string | null;
@@ -49,6 +50,57 @@ export function cop(n: number) {
   if (n >= 1e9) return `$${(n / 1e9).toFixed(1)} B`;
   if (n >= 1e6) return `$${(n / 1e6).toFixed(0)} M`;
   return `$${n.toLocaleString("es-CO")}`;
+}
+
+export function copExact(n: number) {
+  return `$${Number(n || 0).toLocaleString("es-CO", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+export const ESTADO_FILTER_OPTIONS = [
+  { key: "all", label: "Todos los estados" },
+  { key: "EJECUCION", label: "En ejecución" },
+  { key: "FINALIZADO", label: "Finalizado" },
+  { key: "EN_COMPRAS", label: "En compras" },
+  { key: "PAUSADO", label: "Pausado" },
+  { key: "NO_INICIADO", label: "No iniciado" },
+  { key: "SIN_ESTADO", label: "Sin estado" },
+] as const;
+
+export type EstadoFilterKey = (typeof ESTADO_FILTER_OPTIONS)[number]["key"];
+
+export function filterProyectosByEstado(
+  proyectos: DashboardProyecto[],
+  filter: EstadoFilterKey
+): DashboardProyecto[] {
+  if (filter === "all") return proyectos;
+  if (filter === "SIN_ESTADO") {
+    return proyectos.filter((p) => !p.estado_codigo);
+  }
+  return proyectos.filter((p) => p.estado_codigo === filter);
+}
+
+export function computeKpiFromProyectos(proyectos: DashboardProyecto[]): DashboardKpi {
+  const valor = sumField(proyectos, "valor_ucaps");
+  const facturado = sumField(proyectos, "facturado");
+  const pendiente = sumField(proyectos, "pendiente_facturar");
+  const count = (codigo: string) =>
+    proyectos.filter((p) => p.estado_codigo === codigo).length;
+
+  return {
+    total_proyectos: proyectos.length,
+    valor_total_contratos: valor,
+    total_facturado: facturado,
+    total_pendiente: pendiente,
+    pct_facturado: valor > 0 ? Math.round((facturado / valor) * 10000) / 100 : 0,
+    proyectos_ejecucion: count("EJECUCION"),
+    proyectos_finalizados: count("FINALIZADO"),
+    proyectos_compras: count("EN_COMPRAS"),
+    proyectos_pausados: count("PAUSADO"),
+    proyectos_no_iniciados: count("NO_INICIADO"),
+  };
 }
 
 export function avanceBarColor(pct: number) {

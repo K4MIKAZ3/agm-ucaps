@@ -672,6 +672,12 @@ tbody tr:nth-child(even) {
   border-color: #fff;
 }
 
+.dash-filter-note {
+  font-size: 12px;
+  color: #92b4e8;
+  margin: -8px 0 14px;
+}
+
 .dash-filters {
   display: flex;
   flex-wrap: wrap;

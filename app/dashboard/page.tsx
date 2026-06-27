@@ -31,7 +31,7 @@ export default async function DashboardPage() {
     supabase
       .from("v_dashboard_proyectos")
       .select(
-        "id, zona, zona_nombre, zona_color, municipio, municipio_id, nombre_corto, valor_ucaps, avance_fisico, facturado, pendiente_facturar, estado, estado_color, fecha_terminacion, fecha_terminacion_nota, estado_operativo"
+        "id, zona, zona_nombre, zona_color, municipio, municipio_id, nombre_corto, valor_ucaps, avance_fisico, facturado, pendiente_facturar, estado, estado_codigo, estado_color, fecha_terminacion, fecha_terminacion_nota, estado_operativo"
       )
       .order("zona")
       .order("municipio")
@@ -59,6 +59,7 @@ export default async function DashboardPage() {
     facturado: Number(r.facturado),
     pendiente_facturar: Number(r.pendiente_facturar),
     estado: r.estado,
+    estado_codigo: r.estado_codigo,
     estado_color: r.estado_color,
     fecha_terminacion: r.fecha_terminacion,
     fecha_terminacion_nota: r.fecha_terminacion_nota,

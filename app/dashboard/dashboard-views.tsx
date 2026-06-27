@@ -7,6 +7,7 @@ import {
   type DashboardProyecto,
   type DashboardItem,
   type DashboardKpi,
+  type EstadoFilterKey,
   cop,
   avanceBarColor,
   badgeClass,
@@ -14,7 +15,11 @@ import {
   avgAvance,
   sumField,
   groupByUbicacion,
+  ESTADO_FILTER_OPTIONS,
+  filterProyectosByEstado,
+  computeKpiFromProyectos,
 } from "@/lib/dashboard-utils";
+import { exportProyectoPdf } from "@/lib/export-proyecto-pdf";
 
 type View = "general" | "ubicacion" | "proyecto";
 
@@ -91,6 +96,119 @@ function ProyectoTable({ rows }: { rows: DashboardProyecto[] }) {
         </tbody>
       </table>
     </div>
+  );
+}
+
+function GeneralView({
+  kpi,
+  proyectos,
+}: {
+  kpi: DashboardKpi;
+  proyectos: DashboardProyecto[];
+}) {
+  const [estadoFilter, setEstadoFilter] = useState<EstadoFilterKey>("all");
+
+  const estadoCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: proyectos.length };
+    for (const opt of ESTADO_FILTER_OPTIONS) {
+      if (opt.key === "all") continue;
+      counts[opt.key] = filterProyectosByEstado(proyectos, opt.key).length;
+    }
+    return counts;
+  }, [proyectos]);
+
+  const filtered = useMemo(
+    () => filterProyectosByEstado(proyectos, estadoFilter),
+    [proyectos, estadoFilter]
+  );
+
+  const visibleKpi =
+    estadoFilter === "all" ? kpi : computeKpiFromProyectos(filtered);
+
+  const finalizados = filtered.filter((r) => r.estado?.toUpperCase().includes("FINAL"));
+
+  return (
+    <>
+      <div className="dash-filters dash-filters-general">
+        {ESTADO_FILTER_OPTIONS.map((opt) => (
+          <button
+            key={opt.key}
+            type="button"
+            className={`dash-filter-chip${estadoFilter === opt.key ? " active" : ""}`}
+            onClick={() => setEstadoFilter(opt.key)}
+          >
+            {opt.label} ({estadoCounts[opt.key] ?? 0})
+          </button>
+        ))}
+      </div>
+
+      {estadoFilter !== "all" && (
+        <p className="dash-filter-note">
+          Mostrando {filtered.length} de {proyectos.length} proyectos · KPIs y gráficos
+          filtrados
+        </p>
+      )}
+
+      <div className="kpi-row">
+        <div className="kpi">
+          <div className="kpi-lbl">Valor total contratos</div>
+          <div className="kpi-val">{cop(Number(visibleKpi.valor_total_contratos ?? 0))}</div>
+          <div className="kpi-sub">{visibleKpi.total_proyectos ?? filtered.length} proyectos</div>
+        </div>
+        <div className="kpi kpi-gold">
+          <div className="kpi-lbl">Total facturado</div>
+          <div className="kpi-val">{cop(Number(visibleKpi.total_facturado ?? 0))}</div>
+          <div className="kpi-sub">{visibleKpi.pct_facturado ?? 0}% del portafolio</div>
+        </div>
+        <div className="kpi kpi-green">
+          <div className="kpi-lbl">Pendiente por facturar</div>
+          <div className="kpi-val">{cop(Number(visibleKpi.total_pendiente ?? 0))}</div>
+          <div className="kpi-sub">
+            {visibleKpi.valor_total_contratos
+              ? (100 - Number(visibleKpi.pct_facturado ?? 0)).toFixed(1)
+              : 0}
+            % del portafolio
+          </div>
+        </div>
+        <div className="kpi kpi-red">
+          <div className="kpi-lbl">Proyectos finalizados</div>
+          <div className="kpi-val">
+            {visibleKpi.proyectos_finalizados ?? 0} / {visibleKpi.total_proyectos ?? filtered.length}
+          </div>
+          <div className="kpi-sub">
+            {finalizados.length > 0
+              ? finalizados.map((p) => p.nombre_corto).join(" · ")
+              : "—"}
+          </div>
+        </div>
+      </div>
+
+      <DashboardCharts
+        estados={{
+          ejecucion: Number(visibleKpi.proyectos_ejecucion ?? 0),
+          finalizado: Number(visibleKpi.proyectos_finalizados ?? 0),
+          enCompras: Number(visibleKpi.proyectos_compras ?? 0),
+          pausado: Number(visibleKpi.proyectos_pausados ?? 0),
+          noIniciado: Number(visibleKpi.proyectos_no_iniciados ?? 0),
+        }}
+        proyectos={filtered.map((r) => ({
+          municipio: r.municipio,
+          nombre_corto: r.nombre_corto,
+          zona: r.zona,
+          valor_ucaps: Number(r.valor_ucaps),
+          avance_fisico: Number(r.avance_fisico ?? 0),
+          facturado: Number(r.facturado),
+          pendiente_facturar: Number(r.pendiente_facturar),
+        }))}
+      />
+
+      <div className="table-card">
+        <div className="chart-title" style={{ marginBottom: 10 }}>
+          Detalle completo — {filtered.length} proyecto{filtered.length !== 1 ? "s" : ""}
+        </div>
+        <ProyectoTable rows={filtered} />
+      </div>
+    </>
   );
 }
 
@@ -212,6 +330,7 @@ function ProyectoDetailView({
 
   const [selectedId, setSelectedId] = useState(sorted[0]?.id ?? "");
   const [query, setQuery] = useState("");
+  const [exporting, setExporting] = useState(false);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -237,6 +356,15 @@ function ProyectoDetailView({
 
   const av = Math.min(Number(proyecto.avance_fisico ?? 0), 100);
   const itemsConAvance = items.filter((i) => Number(i.avance_pct) > 0).length;
+
+  async function handleExportPdf() {
+    setExporting(true);
+    try {
+      await exportProyectoPdf(proyecto, items);
+    } finally {
+      setExporting(false);
+    }
+  }
 
   return (
     <div className="dash-proyecto-layout">
@@ -282,6 +410,14 @@ function ProyectoDetailView({
           </div>
           <div className="proj-detail-actions">
             <span className={badgeClass(proyecto.estado)}>{proyecto.estado ?? "—"}</span>
+            <button
+              type="button"
+              className="btn-xs btn-primary"
+              onClick={handleExportPdf}
+              disabled={exporting}
+            >
+              {exporting ? "Generando…" : "Exportar PDF"}
+            </button>
             {canManage && (
               <Link className="btn-link" href={`/admin/proyectos/${proyecto.id}`}>
                 Gestionar ítems →
@@ -380,8 +516,6 @@ function ProyectoDetailView({
 export default function DashboardViews({ kpi, proyectos, itemsByProyecto, canManage }: Props) {
   const [view, setView] = useState<View>("general");
 
-  const finalizados = proyectos.filter((r) => r.estado?.toUpperCase().includes("FINAL"));
-
   return (
     <>
       <div className="dash-tabs">
@@ -408,69 +542,7 @@ export default function DashboardViews({ kpi, proyectos, itemsByProyecto, canMan
         </button>
       </div>
 
-      {view === "general" && (
-        <>
-          <div className="kpi-row">
-            <div className="kpi">
-              <div className="kpi-lbl">Valor total contratos</div>
-              <div className="kpi-val">{cop(Number(kpi.valor_total_contratos ?? 0))}</div>
-              <div className="kpi-sub">{kpi.total_proyectos ?? proyectos.length} proyectos</div>
-            </div>
-            <div className="kpi kpi-gold">
-              <div className="kpi-lbl">Total facturado</div>
-              <div className="kpi-val">{cop(Number(kpi.total_facturado ?? 0))}</div>
-              <div className="kpi-sub">{kpi.pct_facturado ?? 0}% del portafolio</div>
-            </div>
-            <div className="kpi kpi-green">
-              <div className="kpi-lbl">Pendiente por facturar</div>
-              <div className="kpi-val">{cop(Number(kpi.total_pendiente ?? 0))}</div>
-              <div className="kpi-sub">
-                {kpi.valor_total_contratos
-                  ? (100 - Number(kpi.pct_facturado ?? 0)).toFixed(1)
-                  : 0}
-                % del portafolio
-              </div>
-            </div>
-            <div className="kpi kpi-red">
-              <div className="kpi-lbl">Proyectos finalizados</div>
-              <div className="kpi-val">
-                {kpi.proyectos_finalizados ?? 0} / {kpi.total_proyectos ?? proyectos.length}
-              </div>
-              <div className="kpi-sub">
-                {finalizados.length > 0
-                  ? finalizados.map((p) => p.nombre_corto).join(" · ")
-                  : "—"}
-              </div>
-            </div>
-          </div>
-
-          <DashboardCharts
-            estados={{
-              ejecucion: Number(kpi.proyectos_ejecucion ?? 0),
-              finalizado: Number(kpi.proyectos_finalizados ?? 0),
-              enCompras: Number(kpi.proyectos_compras ?? 0),
-              pausado: Number(kpi.proyectos_pausados ?? 0),
-              noIniciado: Number(kpi.proyectos_no_iniciados ?? 0),
-            }}
-            proyectos={proyectos.map((r) => ({
-              municipio: r.municipio,
-              nombre_corto: r.nombre_corto,
-              zona: r.zona,
-              valor_ucaps: Number(r.valor_ucaps),
-              avance_fisico: Number(r.avance_fisico ?? 0),
-              facturado: Number(r.facturado),
-              pendiente_facturar: Number(r.pendiente_facturar),
-            }))}
-          />
-
-          <div className="table-card">
-            <div className="chart-title" style={{ marginBottom: 10 }}>
-              Detalle completo — todos los proyectos
-            </div>
-            <ProyectoTable rows={proyectos} />
-          </div>
-        </>
-      )}
+      {view === "general" && <GeneralView kpi={kpi} proyectos={proyectos} />}
 
       {view === "ubicacion" && <UbicacionView proyectos={proyectos} />}
 
