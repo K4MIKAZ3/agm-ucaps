@@ -646,3 +646,283 @@ tbody tr:nth-child(even) {
     grid-template-columns: 1fr;
   }
 }
+
+/* Dashboard views */
+.dash-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.dash-tab {
+  border: 1px solid #1a4a9e;
+  background: transparent;
+  color: #92b4e8;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.dash-tab.active {
+  background: #fff;
+  color: #0d2f6e;
+  border-color: #fff;
+}
+
+.dash-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.dash-filter-chip {
+  border: 1px solid #1a4a9e;
+  background: rgba(255, 255, 255, 0.08);
+  color: #92b4e8;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dash-filter-chip.active {
+  background: #fff;
+  color: #0d2f6e;
+  border-color: #fff;
+}
+
+.loc-zona-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 14px;
+  color: #0d2f6e;
+}
+
+.loc-zona-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #dde6f7;
+}
+
+.loc-zona-header h2 {
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.loc-zona-header p {
+  font-size: 12px;
+  color: #5a7ab0;
+}
+
+.loc-zona-kpis {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.loc-zona-kpis > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.loc-kpi-lbl {
+  font-size: 10px;
+  color: #5a7ab0;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.loc-muni-block {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed #e6f1fb;
+}
+
+.loc-muni-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.loc-muni-header h3 {
+  font-size: 14px;
+}
+
+.loc-muni-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 12px;
+  color: #5a7ab0;
+}
+
+.loc-proj-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.loc-proj-card {
+  background: #f2f6fc;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.loc-proj-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: flex-start;
+  margin-bottom: 6px;
+}
+
+.loc-proj-top strong {
+  font-size: 13px;
+}
+
+.loc-proj-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 11px;
+  color: #5a7ab0;
+  margin-bottom: 8px;
+}
+
+.dash-proyecto-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 14px;
+  align-items: start;
+}
+
+.dash-proj-list {
+  background: #fff;
+  border-radius: 10px;
+  padding: 12px;
+  color: #0d2f6e;
+  position: sticky;
+  top: 12px;
+}
+
+.dash-proj-search {
+  width: 100%;
+  border: 1px solid #dde6f7;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+
+.dash-proj-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.dash-proj-item {
+  border: 1px solid #dde6f7;
+  background: #f8fbff;
+  border-radius: 8px;
+  padding: 8px 10px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dash-proj-item.active {
+  border-color: #1a5dc8;
+  background: #e6f1fb;
+}
+
+.dash-proj-item-name {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.dash-proj-item-loc,
+.dash-proj-item-av {
+  display: block;
+  font-size: 11px;
+  color: #5a7ab0;
+  margin-top: 2px;
+}
+
+.dash-proj-detail {
+  min-width: 0;
+}
+
+.proj-detail-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.proj-detail-loc {
+  font-size: 12px;
+  color: #92b4e8;
+  margin-bottom: 4px;
+}
+
+.proj-detail-header h2 {
+  font-size: 20px;
+  color: #fff;
+}
+
+.proj-detail-note {
+  font-size: 12px;
+  color: #92b4e8;
+  margin-top: 6px;
+  max-width: 640px;
+}
+
+.proj-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.proj-detail-kpis {
+  margin-bottom: 14px;
+}
+
+.proj-detail-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: #92b4e8;
+}
+
+@media (max-width: 900px) {
+  .dash-proyecto-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .dash-proj-list {
+    position: static;
+  }
+
+  .dash-proj-scroll {
+    max-height: 240px;
+  }
+}
