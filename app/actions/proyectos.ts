@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { actionError, actionSuccess, type ActionResult } from "@/lib/action-result";
 
 async function requireManager() {
   const supabase = await createClient();
@@ -45,6 +46,59 @@ function revalidateProyecto(proyectoId: string) {
   revalidatePath("/dashboard");
   revalidatePath("/admin/proyectos");
   revalidatePath(`/admin/proyectos/${proyectoId}`);
+}
+
+function parseItemFields(formData: FormData):
+  | { error: string }
+  | {
+      payload: {
+        actividad_id: string | null;
+        descripcion_override: string | null;
+        unidad_id: string;
+        categoria_id: string | null;
+        numero_item: number | null;
+        cantidad_total: number;
+        valor_unitario: number;
+        cantidad_ejecutada: number;
+        orden: number;
+        observaciones: string | null;
+      };
+    } {
+  const actividad = String(formData.get("actividad") || "").trim();
+  const actividad_id = String(formData.get("actividad_id") || "") || null;
+  const unidad_id = String(formData.get("unidad_id") || "") || null;
+  const categoria_id = String(formData.get("categoria_id") || "") || null;
+  const numero_item = Number(formData.get("numero_item") || 0) || null;
+  const cantidad_total = Number(formData.get("cantidad_total") || 0);
+  const valor_unitario = Number(formData.get("valor_unitario") || 0);
+  const cantidad_ejecutada = Number(formData.get("cantidad_ejecutada") || 0);
+  const orden = Number(formData.get("orden") || 0);
+  const observaciones = String(formData.get("observaciones") || "").trim() || null;
+
+  if (!actividad && !actividad_id) {
+    return { error: "Indica la actividad o descripción del ítem" };
+  }
+  if (!unidad_id) {
+    return { error: "Selecciona la unidad de medida" };
+  }
+  if (cantidad_total < 0) {
+    return { error: "La cantidad total no puede ser negativa" };
+  }
+
+  return {
+    payload: {
+      actividad_id: actividad_id || null,
+      descripcion_override: actividad || null,
+      unidad_id,
+      categoria_id,
+      numero_item,
+      cantidad_total,
+      valor_unitario,
+      cantidad_ejecutada: Math.min(Math.max(cantidad_ejecutada, 0), cantidad_total),
+      orden: orden || numero_item || 0,
+      observaciones,
+    },
+  };
 }
 
 export async function createProyecto(formData: FormData) {
@@ -105,52 +159,111 @@ export async function updateProyectoEstado(formData: FormData) {
   revalidateProyecto(id);
 }
 
-export async function updateItemAvance(formData: FormData) {
-  const supabase = await requireAvanceEditor();
+export async function updateItemAvance(
+  _prev: ActionResult,
+  formData: FormData
+): Promise<ActionResult> {
+  try {
+    const supabase = await requireAvanceEditor();
 
-  const item_id = String(formData.get("item_id"));
-  const proyecto_id = String(formData.get("proyecto_id"));
-  const cantidad_ejecutada = Number(formData.get("cantidad_ejecutada") || 0);
+    const item_id = String(formData.get("item_id"));
+    const proyecto_id = String(formData.get("proyecto_id"));
+    const cantidad_ejecutada = Number(formData.get("cantidad_ejecutada") || 0);
 
-  const { data: item, error: fetchError } = await supabase
-    .from("proyecto_items")
-    .select("cantidad_total")
-    .eq("id", item_id)
-    .single();
+    const { data: item, error: fetchError } = await supabase
+      .from("proyecto_items")
+      .select("cantidad_total")
+      .eq("id", item_id)
+      .single();
 
-  if (fetchError || !item) throw new Error("Ítem no encontrado");
+    if (fetchError || !item) return actionError("Ítem no encontrado");
 
-  const ejecutada = Math.min(Math.max(cantidad_ejecutada, 0), Number(item.cantidad_total));
+    const ejecutada = Math.min(Math.max(cantidad_ejecutada, 0), Number(item.cantidad_total));
 
-  const { error } = await supabase
-    .from("proyecto_items")
-    .update({ cantidad_ejecutada: ejecutada })
-    .eq("id", item_id);
+    const { error } = await supabase
+      .from("proyecto_items")
+      .update({ cantidad_ejecutada: ejecutada })
+      .eq("id", item_id);
 
-  if (error) throw new Error(error.message);
+    if (error) return actionError(error.message);
 
-  revalidateProyecto(proyecto_id);
+    revalidateProyecto(proyecto_id);
+    return actionSuccess("Avance guardado");
+  } catch (e) {
+    return actionError(e instanceof Error ? e.message : "No se pudo guardar el avance");
+  }
 }
 
-export async function createProyectoItem(formData: FormData) {
-  const supabase = await requireManager();
+export async function createProyectoItem(
+  _prev: ActionResult,
+  formData: FormData
+): Promise<ActionResult> {
+  try {
+    const supabase = await requireManager();
+    const parsed = parseItemFields(formData);
+    if ("error" in parsed) return actionError(parsed.error);
 
-  const payload = {
-    proyecto_id: String(formData.get("proyecto_id")),
-    actividad_id: String(formData.get("actividad_id")),
-    unidad_id: String(formData.get("unidad_id") || "") || null,
-    categoria_id: String(formData.get("categoria_id") || "") || null,
-    numero_item: Number(formData.get("numero_item") || 0) || null,
-    cantidad_total: Number(formData.get("cantidad_total") || 0),
-    valor_unitario: Number(formData.get("valor_unitario") || 0),
-    cantidad_ejecutada: Number(formData.get("cantidad_ejecutada") || 0),
-    orden: Number(formData.get("orden") || 0),
-  };
+    const proyecto_id = String(formData.get("proyecto_id"));
+    const { error } = await supabase.from("proyecto_items").insert({
+      proyecto_id,
+      ...parsed.payload,
+    });
 
-  const { error } = await supabase.from("proyecto_items").insert(payload);
-  if (error) throw new Error(error.message);
+    if (error) return actionError(error.message);
 
-  revalidatePath("/admin/proyectos");
-  revalidatePath(`/admin/proyectos/${payload.proyecto_id}`);
-  revalidatePath("/dashboard");
+    revalidateProyecto(proyecto_id);
+    return actionSuccess("Ítem añadido al proyecto");
+  } catch (e) {
+    return actionError(e instanceof Error ? e.message : "No se pudo crear el ítem");
+  }
+}
+
+export async function updateProyectoItem(
+  _prev: ActionResult,
+  formData: FormData
+): Promise<ActionResult> {
+  try {
+    const supabase = await requireManager();
+    const parsed = parseItemFields(formData);
+    if ("error" in parsed) return actionError(parsed.error);
+
+    const item_id = String(formData.get("item_id"));
+    const proyecto_id = String(formData.get("proyecto_id"));
+
+    const { error } = await supabase
+      .from("proyecto_items")
+      .update(parsed.payload)
+      .eq("id", item_id);
+
+    if (error) return actionError(error.message);
+
+    revalidateProyecto(proyecto_id);
+    return actionSuccess("Ítem actualizado");
+  } catch (e) {
+    return actionError(e instanceof Error ? e.message : "No se pudo actualizar el ítem");
+  }
+}
+
+export async function anularProyectoItem(
+  _prev: ActionResult,
+  formData: FormData
+): Promise<ActionResult> {
+  try {
+    const supabase = await requireManager();
+
+    const item_id = String(formData.get("item_id"));
+    const proyecto_id = String(formData.get("proyecto_id"));
+
+    const { error } = await supabase
+      .from("proyecto_items")
+      .update({ anulado: true })
+      .eq("id", item_id);
+
+    if (error) return actionError(error.message);
+
+    revalidateProyecto(proyecto_id);
+    return actionSuccess("Ítem quitado del proyecto");
+  } catch (e) {
+    return actionError(e instanceof Error ? e.message : "No se pudo quitar el ítem");
+  }
 }

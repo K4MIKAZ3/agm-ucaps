@@ -525,6 +525,41 @@ tbody tr:nth-child(even) {
   color: #a32d2d;
 }
 
+.btn-xs.btn-ghost {
+  background: transparent;
+  color: #5a7099;
+  border: 1px solid #dde6f7;
+}
+
+.field-span-2 {
+  grid-column: span 2;
+}
+
+.item-add-form {
+  margin-bottom: 16px;
+}
+
+.item-edit-row td {
+  background: #f8fbff;
+  padding: 12px !important;
+}
+
+.item-edit-form .grid-2 {
+  margin-bottom: 10px;
+}
+
+.item-edit-actions,
+.item-row-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.item-row-actions form {
+  display: inline;
+}
+
 .user-edit-cell {
   padding: 8px 10px !important;
 }
