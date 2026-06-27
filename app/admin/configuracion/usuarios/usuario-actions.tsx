@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import type { ActionResult } from "@/lib/action-result";
 
 type Actions = {
-  updateUsuario: (formData: FormData) => Promise<void>;
-  setUsuarioActivo: (formData: FormData) => Promise<void>;
-  resetUsuarioPassword: (formData: FormData) => Promise<void>;
-  sendPasswordRecoveryEmail: (formData: FormData) => Promise<void>;
-  deleteUsuario: (formData: FormData) => Promise<void>;
+  setUsuarioActivo: (formData: FormData) => Promise<ActionResult>;
+  resetUsuarioPassword: (formData: FormData) => Promise<ActionResult>;
+  sendPasswordRecoveryEmail: (formData: FormData) => Promise<ActionResult>;
+  deleteUsuario: (formData: FormData) => Promise<ActionResult>;
 };
 
 type Props = {
@@ -30,19 +30,18 @@ export default function UsuarioActions({
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  async function run(fn: (fd: FormData) => Promise<void>, fd: FormData) {
+  async function run(fn: (fd: FormData) => Promise<ActionResult>, fd: FormData) {
     setBusy(true);
     setMsg(null);
     setErr(null);
-    try {
-      await fn(fd);
-      setMsg("Listo");
-      setOpen(false);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "Error");
-    } finally {
-      setBusy(false);
+    const result = await fn(fd);
+    setBusy(false);
+    if (result.error) {
+      setErr(result.error);
+      return;
     }
+    setMsg(result.success ?? "Listo");
+    setOpen(false);
   }
 
   return (
@@ -62,12 +61,14 @@ export default function UsuarioActions({
         <div className="action-panel">
           {!isSelf && (
             <form
-              action={(fd) => {
+              onSubmit={(e) => {
+                e.preventDefault();
+                const fd = new FormData();
+                fd.set("id", userId);
+                fd.set("activo", activo ? "false" : "true");
                 void run(actions.setUsuarioActivo, fd);
               }}
             >
-              <input type="hidden" name="id" value={userId} />
-              <input type="hidden" name="activo" value={activo ? "false" : "true"} />
               <button type="submit" className="btn-xs" disabled={busy}>
                 {activo ? "Desactivar cuenta" : "Activar cuenta"}
               </button>
