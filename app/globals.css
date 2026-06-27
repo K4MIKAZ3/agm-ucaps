@@ -110,6 +110,24 @@ button {
   border-top: 3px solid #1a5dc8;
 }
 
+.kpi-gold {
+  border-top-color: #e0a020;
+}
+
+.kpi-green {
+  border-top-color: #1baf7a;
+}
+
+.kpi-red {
+  border-top-color: #e34948;
+}
+
+.kpi-sub {
+  font-size: 10px;
+  color: #7a94b8;
+  margin-top: 4px;
+}
+
 .kpi-lbl {
   font-size: 10px;
   color: #5a7ab0;
@@ -171,4 +189,272 @@ tbody tr:nth-child(even) {
   padding: 2px 6px;
   font-size: 10px;
   font-weight: 700;
+}
+
+.admin-nav {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #1a4a9e;
+}
+
+.admin-nav a {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.btn-link {
+  display: inline-block;
+  background: #1a5dc8;
+  color: #fff !important;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.btn-link:hover {
+  background: #2a78d6;
+}
+
+.form-wide {
+  max-width: 720px;
+  margin-bottom: 20px;
+}
+
+.form-wide select,
+.form-wide textarea {
+  border: 1px solid #dde6f7;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font: inherit;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 16px;
+}
+
+.checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+
+.checks label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+@media (max-width: 640px) {
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.chart-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 14px;
+  color: #0d2f6e;
+}
+
+.chart-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 10px;
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 7px;
+  margin-bottom: 10px;
+}
+
+.status-pill {
+  border-radius: 8px;
+  padding: 9px 10px;
+  text-align: center;
+}
+
+.status-val {
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.status-lbl {
+  font-size: 9px;
+  margin-top: 2px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.status-pill.ej {
+  background: #e6f1fb;
+}
+.status-pill.ej .status-val {
+  color: #0d2f6e;
+}
+.status-pill.ej .status-lbl {
+  color: #185fa5;
+}
+
+.status-pill.fn {
+  background: #eaf3de;
+}
+.status-pill.fn .status-val {
+  color: #27500a;
+}
+.status-pill.fn .status-lbl {
+  color: #3b6d11;
+}
+
+.status-pill.cp {
+  background: #faeeda;
+}
+.status-pill.cp .status-val {
+  color: #412402;
+}
+.status-pill.cp .status-lbl {
+  color: #854f0b;
+}
+
+.status-pill.ps {
+  background: #fcebeb;
+}
+.status-pill.ps .status-val {
+  color: #501313;
+}
+.status-pill.ps .status-lbl {
+  color: #a32d2d;
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: #52514e;
+}
+
+.legend-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.chart-box {
+  position: relative;
+  width: 100%;
+}
+
+.chart-box-sm {
+  height: 155px;
+}
+
+.chart-box-md {
+  height: 170px;
+}
+
+.chart-box-lg {
+  height: 215px;
+}
+
+.chart-empty {
+  font-size: 12px;
+  color: #7a94b8;
+  padding: 40px 0;
+  text-align: center;
+}
+
+.table-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 14px;
+  color: #0d2f6e;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.b-ej {
+  background: #e6f1fb;
+  color: #185fa5;
+}
+
+.b-fn {
+  background: #eaf3de;
+  color: #3b6d11;
+}
+
+.b-cp {
+  background: #faeeda;
+  color: #854f0b;
+}
+
+.b-ps {
+  background: #fcebeb;
+  color: #a32d2d;
+}
+
+.bar-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bar-track {
+  flex: 1;
+  height: 7px;
+  background: #e6f1fb;
+  border-radius: 4px;
+  overflow: hidden;
+  min-width: 40px;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 4px;
+}
+
+.bar-pct {
+  font-size: 9px;
+  color: #5a7ab0;
+  min-width: 22px;
+}
+
+@media (max-width: 900px) {
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .status-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }

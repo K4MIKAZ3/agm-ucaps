@@ -24,3 +24,13 @@ yarn-debug.log*
 # supabase local
 supabase/.branches
 supabase/.temp
+
+# import tooling artifacts
+scripts/_*
+scripts/batch_*.sql
+scripts/mega_batch_*.sql
+scripts/import_output.sql
+scripts/*.json
+scripts/*.js
+!scripts/import_ucaps_excel.py
+
