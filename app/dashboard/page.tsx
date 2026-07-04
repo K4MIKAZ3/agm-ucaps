@@ -2,9 +2,10 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import LogoutButton from "./logout-button";
-import DashboardViews from "./dashboard-views";
+import DashboardShell from "./dashboard-shell";
 import { canManageProyectos, canManageUsuarios } from "@/lib/auth";
 import { combineSupabaseErrors } from "@/lib/supabase/query-error";
+import { safeNumber } from "@/lib/safe-number";
 import {
   type DashboardKpi,
   type DashboardProyecto,
@@ -13,6 +14,24 @@ import {
 } from "@/lib/dashboard-utils";
 
 export const dynamic = "force-dynamic";
+
+function dashboardError(message: string) {
+  return (
+    <main className="wrap">
+      <div className="topbar">
+        <div>
+          <h1>ESTADO DE PROYECTOS AGM</h1>
+        </div>
+        <a className="btn-link" href="/login">
+          Ir al login
+        </a>
+      </div>
+      <div className="alert-warn">
+        <strong>No se pudo cargar el dashboard:</strong> {message}
+      </div>
+    </main>
+  );
+}
 
 export default async function DashboardPage() {
   let supabase;
@@ -23,35 +42,34 @@ export default async function DashboardPage() {
       error instanceof Error
         ? error.message
         : "No se pudo inicializar la conexión con Supabase.";
-
-    return (
-      <main className="wrap">
-        <div className="alert-warn">
-          <strong>Error de configuración:</strong> {message}
-        </div>
-      </main>
-    );
+    return dashboardError(message);
   }
 
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
+
+  if (authError) {
+    return dashboardError(`Sesión inválida: ${authError.message}`);
+  }
 
   if (!user) redirect("/login");
 
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("nombre, rol, email")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  let loadError: string | null = null;
-  let kpiRow: Record<string, unknown> | null = null;
-  let proyectosRaw: Array<Record<string, unknown>> | null = null;
-  let itemsRaw: Array<Record<string, unknown>> | null = null;
-
   try {
-    const [kpiResult, proyectosResult, itemsResult] = await Promise.all([
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("nombre, rol, email")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    let loadError: string | null = null;
+    let kpiRow: Record<string, unknown> | null = null;
+    let proyectosRaw: Array<Record<string, unknown>> | null = null;
+    let itemsRaw: Array<Record<string, unknown>> | null = null;
+
+    try {
+      const [kpiResult, proyectosResult, itemsResult] = await Promise.all([
       supabase.from("v_kpi_dashboard").select("*").maybeSingle(),
       supabase
         .from("v_dashboard_proyectos")
@@ -81,49 +99,50 @@ export default async function DashboardPage() {
     proyectosRaw = proyectosResult.data;
     itemsRaw = itemsResult.data;
   } catch (error) {
-    loadError =
-      error instanceof Error
-        ? error.message
-        : "No se pudo conectar con la base de datos.";
-  }
+      loadError =
+        error instanceof Error
+          ? error.message
+          : "No se pudo conectar con la base de datos.";
+    }
 
-  const kpi = (kpiRow ?? {}) as DashboardKpi;
-  const proyectos = (proyectosRaw ?? []).map((r) => ({
-    id: String(r.id),
-    zona: Number(r.zona),
-    zona_nombre: String(r.zona_nombre ?? `Zona ${r.zona}`),
-    zona_color: r.zona_color as string | null,
-    municipio: String(r.municipio),
-    municipio_id: String(r.municipio_id),
-    nombre_corto: String(r.nombre_corto),
-    valor_ucaps: Number(r.valor_ucaps),
-    avance_fisico: Number(r.avance_fisico ?? 0),
-    facturado: Number(r.facturado),
-    pendiente_facturar: Number(r.pendiente_facturar),
+    const kpi = (kpiRow ?? {}) as DashboardKpi;
+    const proyectos = (proyectosRaw ?? []).map((r) => ({
+      id: String(r.id ?? ""),
+      zona: safeNumber(r.zona),
+      zona_nombre: String(r.zona_nombre ?? `Zona ${r.zona ?? "?"}`),
+      zona_color: r.zona_color as string | null,
+      municipio: String(r.municipio ?? "—"),
+      municipio_id: String(r.municipio_id ?? ""),
+      nombre_corto: String(r.nombre_corto ?? "—"),
+      valor_ucaps: safeNumber(r.valor_ucaps),
+      avance_fisico: safeNumber(r.avance_fisico),
+      facturado: safeNumber(r.facturado),
+      pendiente_facturar: safeNumber(r.pendiente_facturar),
     estado: r.estado as string | null,
     estado_codigo: r.estado_codigo as string | null,
     estado_color: r.estado_color as string | null,
     fecha_terminacion: r.fecha_terminacion as string | null,
     fecha_terminacion_nota: r.fecha_terminacion_nota as string | null,
     estado_operativo: r.estado_operativo as string | null,
-  })) as DashboardProyecto[];
+    })) as DashboardProyecto[];
 
-  const items: DashboardItem[] = (itemsRaw ?? []).map((i) => ({
-    id: String(i.id),
-    proyecto_id: String(i.proyecto_id),
-    numero_item: i.numero_item as number | null,
-    actividad: i.actividad as string | null,
-    unidad: i.unidad as string | null,
-    cantidad_total: Number(i.cantidad_total),
-    cantidad_ejecutada: Number(i.cantidad_ejecutada ?? 0),
-    avance_pct: Number(i.avance_pct ?? 0),
-    valor_ejecutado: Number(i.valor_ejecutado ?? 0),
-    valor_total: Number(i.valor_total ?? 0),
-  }));
+    const items: DashboardItem[] = (itemsRaw ?? []).map((i) => ({
+      id: String(i.id ?? ""),
+      proyecto_id: String(i.proyecto_id ?? ""),
+      numero_item:
+        i.numero_item == null ? null : safeNumber(i.numero_item),
+      actividad: i.actividad as string | null,
+      unidad: i.unidad as string | null,
+      cantidad_total: safeNumber(i.cantidad_total),
+      cantidad_ejecutada: safeNumber(i.cantidad_ejecutada),
+      avance_pct: safeNumber(i.avance_pct),
+      valor_ejecutado: safeNumber(i.valor_ejecutado),
+      valor_total: safeNumber(i.valor_total),
+    }));
 
-  const itemsByProyecto = groupItemsByProyecto(items);
+    const itemsByProyecto = groupItemsByProyecto(items);
 
-  return (
+    return (
     <main className="wrap">
       <div className="topbar">
         <div>
@@ -167,12 +186,20 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <DashboardViews
+      <DashboardShell
         kpi={kpi}
         proyectos={proyectos}
         itemsByProyecto={itemsByProyecto}
         canManage={canManageProyectos(profile?.rol)}
       />
     </main>
-  );
+    );
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Error inesperado al renderizar el dashboard.";
+
+    return dashboardError(message);
+  }
 }

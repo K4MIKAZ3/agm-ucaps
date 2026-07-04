@@ -19,7 +19,6 @@ import {
   filterProyectosByEstado,
   computeKpiFromProyectos,
 } from "@/lib/dashboard-utils";
-import { exportProyectoPdf } from "@/lib/export-proyecto-pdf";
 
 type View = "general" | "ubicacion" | "proyecto";
 
@@ -360,6 +359,7 @@ function ProyectoDetailView({
   async function handleExportPdf() {
     setExporting(true);
     try {
+      const { exportProyectoPdf } = await import("@/lib/export-proyecto-pdf");
       await exportProyectoPdf(proyecto, items);
     } finally {
       setExporting(false);
