@@ -107,6 +107,7 @@ function GeneralView({
   proyectos: DashboardProyecto[];
 }) {
   const [estadoFilter, setEstadoFilter] = useState<EstadoFilterKey>("all");
+  const [exporting, setExporting] = useState(false);
 
   const estadoCounts = useMemo(() => {
     const counts: Record<string, number> = { all: proyectos.length };
@@ -127,8 +128,44 @@ function GeneralView({
 
   const finalizados = filtered.filter((r) => r.estado?.toUpperCase().includes("FINAL"));
 
+  const filterLabel =
+    ESTADO_FILTER_OPTIONS.find((o) => o.key === estadoFilter)?.label ?? "Todos los estados";
+
+  async function handleExportReport() {
+    setExporting(true);
+    try {
+      const { captureDashboardChartImages, exportDashboardPdf } = await import(
+        "@/lib/export-dashboard-pdf"
+      );
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const chartImages = captureDashboardChartImages();
+      await exportDashboardPdf({
+        kpi: visibleKpi,
+        proyectos: filtered,
+        filterLabel,
+        chartImages,
+      });
+    } finally {
+      setExporting(false);
+    }
+  }
+
   return (
     <>
+      <div className="dash-export-row">
+        <button
+          type="button"
+          className="btn btn-inline"
+          disabled={exporting || filtered.length === 0}
+          onClick={() => void handleExportReport()}
+        >
+          {exporting ? "Generando PDF…" : "Exportar reporte PDF"}
+        </button>
+        <span className="form-hint" style={{ margin: 0 }}>
+          Incluye KPIs, gráficos visibles y tabla de proyectos ({filterLabel.toLowerCase()})
+        </span>
+      </div>
+
       <div className="dash-filters dash-filters-general">
         {ESTADO_FILTER_OPTIONS.map((opt) => (
           <button

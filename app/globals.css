@@ -678,6 +678,21 @@ tbody tr:nth-child(even) {
   margin: -8px 0 14px;
 }
 
+.dash-export-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.proyecto-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
 .dash-filters {
   display: flex;
   flex-wrap: wrap;
