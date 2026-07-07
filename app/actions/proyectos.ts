@@ -42,6 +42,25 @@ async function requireAvanceEditor() {
   return supabase;
 }
 
+async function requireSuperAdmin() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("No autenticado");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("rol")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.rol !== "super_admin") {
+    throw new Error("Solo super admin puede eliminar proyectos permanentemente");
+  }
+  return supabase;
+}
+
 function revalidateProyecto(proyectoId: string) {
   revalidatePath("/dashboard");
   revalidatePath("/admin/proyectos");
@@ -241,6 +260,40 @@ export async function updateProyectoItem(
     return actionSuccess("Ítem actualizado");
   } catch (e) {
     return actionError(e instanceof Error ? e.message : "No se pudo actualizar el ítem");
+  }
+}
+
+export async function archiveProyecto(formData: FormData): Promise<ActionResult> {
+  try {
+    const supabase = await requireManager();
+    const id = String(formData.get("proyecto_id"));
+    if (!id) return actionError("Proyecto requerido");
+
+    const { error } = await supabase.from("proyectos").update({ activo: false }).eq("id", id);
+    if (error) return actionError(error.message);
+
+    revalidatePath("/admin/proyectos");
+    revalidatePath("/dashboard");
+    return actionSuccess("Proyecto archivado (ya no aparece en el dashboard)");
+  } catch (e) {
+    return actionError(e instanceof Error ? e.message : "No se pudo archivar el proyecto");
+  }
+}
+
+export async function deleteProyecto(formData: FormData): Promise<ActionResult> {
+  try {
+    const supabase = await requireSuperAdmin();
+    const id = String(formData.get("proyecto_id"));
+    if (!id) return actionError("Proyecto requerido");
+
+    const { error } = await supabase.from("proyectos").delete().eq("id", id);
+    if (error) return actionError(error.message);
+
+    revalidatePath("/admin/proyectos");
+    revalidatePath("/dashboard");
+    return actionSuccess("Proyecto eliminado permanentemente");
+  } catch (e) {
+    return actionError(e instanceof Error ? e.message : "No se pudo eliminar el proyecto");
   }
 }
 

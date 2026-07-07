@@ -16,6 +16,7 @@ export type DashboardProyecto = {
   fecha_terminacion: string | null;
   fecha_terminacion_nota: string | null;
   estado_operativo: string | null;
+  updated_at: string | null;
 };
 
 export type DashboardItem = {
@@ -80,6 +81,66 @@ export function filterProyectosByEstado(
     return proyectos.filter((p) => !p.estado_codigo);
   }
   return proyectos.filter((p) => p.estado_codigo === filter);
+}
+
+export function filterProyectosByZona(
+  proyectos: DashboardProyecto[],
+  zona: number | "all"
+): DashboardProyecto[] {
+  if (zona === "all") return proyectos;
+  return proyectos.filter((p) => p.zona === zona);
+}
+
+export function filterProyectosBySearch(
+  proyectos: DashboardProyecto[],
+  query: string
+): DashboardProyecto[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return proyectos;
+  return proyectos.filter(
+    (p) =>
+      p.nombre_corto.toLowerCase().includes(q) ||
+      p.municipio.toLowerCase().includes(q) ||
+      p.zona_nombre.toLowerCase().includes(q) ||
+      String(p.zona).includes(q) ||
+      (p.estado?.toLowerCase().includes(q) ?? false)
+  );
+}
+
+export function getZonaOptions(proyectos: DashboardProyecto[]) {
+  const map = new Map<number, { zona: number; nombre: string; count: number }>();
+  for (const p of proyectos) {
+    const existing = map.get(p.zona);
+    if (existing) {
+      existing.count += 1;
+    } else {
+      map.set(p.zona, { zona: p.zona, nombre: p.zona_nombre, count: 1 });
+    }
+  }
+  return [...map.values()].sort((a, b) => a.zona - b.zona);
+}
+
+export function formatUpdatedAt(iso: string | null | undefined) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleString("es-CO", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+export function countItemsByProyecto(
+  itemsByProyecto: Record<string, DashboardItem[]>
+): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const [id, items] of Object.entries(itemsByProyecto)) {
+    counts[id] = items.length;
+  }
+  return counts;
 }
 
 export function computeKpiFromProyectos(proyectos: DashboardProyecto[]): DashboardKpi {

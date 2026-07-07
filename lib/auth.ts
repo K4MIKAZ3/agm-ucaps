@@ -38,6 +38,10 @@ export function canManageUsuarios(rol?: string | null) {
   return rol === "super_admin";
 }
 
+export function isSuperAdmin(rol?: string | null) {
+  return rol === "super_admin";
+}
+
 export function isProfileActive(profile: { activo?: boolean } | null) {
   return profile?.activo !== false;
 }

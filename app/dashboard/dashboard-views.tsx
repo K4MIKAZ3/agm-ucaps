@@ -3,20 +3,27 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import DashboardCharts from "./dashboard-charts";
+import { computeProyectoAlerts, type ProyectoAlert } from "@/lib/dashboard-alerts";
+import { compareLatestMonths, type MonthlyPortfolioPoint } from "@/lib/dashboard-snapshots";
 import {
   type DashboardProyecto,
   type DashboardItem,
   type DashboardKpi,
   type EstadoFilterKey,
   cop,
+  copExact,
   avanceBarColor,
   badgeClass,
   formatCierre,
+  formatUpdatedAt,
   avgAvance,
   sumField,
   groupByUbicacion,
+  getZonaOptions,
   ESTADO_FILTER_OPTIONS,
   filterProyectosByEstado,
+  filterProyectosByZona,
+  filterProyectosBySearch,
   computeKpiFromProyectos,
 } from "@/lib/dashboard-utils";
 
@@ -26,6 +33,8 @@ type Props = {
   kpi: DashboardKpi;
   proyectos: DashboardProyecto[];
   itemsByProyecto: Record<string, DashboardItem[]>;
+  itemCounts: Record<string, number>;
+  monthlyTrend: MonthlyPortfolioPoint[];
   canManage: boolean;
 };
 
@@ -44,7 +53,48 @@ function ProgressBar({ pct }: { pct: number }) {
   );
 }
 
-function ProyectoTable({ rows }: { rows: DashboardProyecto[] }) {
+function AlertsPanel({ alerts }: { alerts: ProyectoAlert[] }) {
+  if (alerts.length === 0) return null;
+
+  const icon: Record<ProyectoAlert["kind"], string> = {
+    bajo_avance: "⚠",
+    sobrefacturado: "⛔",
+    sin_actualizar: "🕐",
+  };
+
+  return (
+    <div className="dash-alerts">
+      <div className="dash-alerts-title">
+        Alertas operativas ({alerts.length})
+      </div>
+      <ul className="dash-alerts-list">
+        {alerts.slice(0, 8).map((a) => (
+          <li key={`${a.proyectoId}-${a.kind}`} className={`dash-alert dash-alert-${a.kind}`}>
+            <span className="dash-alert-icon">{icon[a.kind]}</span>
+            <span>
+              <strong>{a.nombre}</strong> · Z{a.zona} {a.municipio} — {a.message}
+            </span>
+          </li>
+        ))}
+      </ul>
+      {alerts.length > 8 && (
+        <p className="form-hint" style={{ marginTop: 8 }}>
+          +{alerts.length - 8} alertas más en la tabla
+        </p>
+      )}
+    </div>
+  );
+}
+
+function ProyectoTable({
+  rows,
+  itemCounts,
+  alertIds,
+}: {
+  rows: DashboardProyecto[];
+  itemCounts: Record<string, number>;
+  alertIds?: Set<string>;
+}) {
   return (
     <div className="table-scroll">
       <table>
@@ -53,6 +103,7 @@ function ProyectoTable({ rows }: { rows: DashboardProyecto[] }) {
             <th>Zona</th>
             <th>Municipio</th>
             <th>Proyecto</th>
+            <th>Ítems</th>
             <th>Valor UCAPS</th>
             <th>Avance</th>
             <th>Progreso</th>
@@ -60,23 +111,26 @@ function ProyectoTable({ rows }: { rows: DashboardProyecto[] }) {
             <th>Cierre</th>
             <th>Estado</th>
             <th>Pendiente</th>
+            <th>Actualizado</th>
           </tr>
         </thead>
         <tbody>
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={10} style={{ textAlign: "center", padding: 24 }}>
-                Sin proyectos aún.
+              <td colSpan={12} style={{ textAlign: "center", padding: 24 }}>
+                Sin proyectos que coincidan con los filtros.
               </td>
             </tr>
           ) : (
             rows.map((r) => {
               const av = Math.min(Number(r.avance_fisico ?? 0), 100);
+              const hasAlert = alertIds?.has(r.id);
               return (
-                <tr key={r.id}>
+                <tr key={r.id} className={hasAlert ? "row-alert" : undefined}>
                   <td style={{ textAlign: "center", fontWeight: 700 }}>{r.zona}</td>
                   <td style={{ fontWeight: 600 }}>{r.municipio}</td>
                   <td style={{ fontWeight: 600 }}>{r.nombre_corto}</td>
+                  <td style={{ textAlign: "center" }}>{itemCounts[r.id] ?? 0}</td>
                   <td>{cop(Number(r.valor_ucaps))}</td>
                   <td style={{ textAlign: "center", fontWeight: 700 }}>{av}%</td>
                   <td>
@@ -88,6 +142,7 @@ function ProyectoTable({ rows }: { rows: DashboardProyecto[] }) {
                     <span className={badgeClass(r.estado)}>{r.estado ?? "—"}</span>
                   </td>
                   <td style={{ fontWeight: 700 }}>{cop(Number(r.pendiente_facturar))}</td>
+                  <td className="cell-muted">{formatUpdatedAt(r.updated_at)}</td>
                 </tr>
               );
             })
@@ -101,33 +156,89 @@ function ProyectoTable({ rows }: { rows: DashboardProyecto[] }) {
 function GeneralView({
   kpi,
   proyectos,
+  itemCounts,
+  monthlyTrend,
 }: {
   kpi: DashboardKpi;
   proyectos: DashboardProyecto[];
+  itemCounts: Record<string, number>;
+  monthlyTrend: MonthlyPortfolioPoint[];
 }) {
   const [estadoFilter, setEstadoFilter] = useState<EstadoFilterKey>("all");
+  const [zonaFilter, setZonaFilter] = useState<number | "all">("all");
+  const [exporting, setExporting] = useState(false);
+
+  const zonaOptions = useMemo(() => getZonaOptions(proyectos), [proyectos]);
 
   const estadoCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: proyectos.length };
+    const base =
+      zonaFilter === "all" ? proyectos : filterProyectosByZona(proyectos, zonaFilter);
+    const counts: Record<string, number> = { all: base.length };
     for (const opt of ESTADO_FILTER_OPTIONS) {
       if (opt.key === "all") continue;
-      counts[opt.key] = filterProyectosByEstado(proyectos, opt.key).length;
+      counts[opt.key] = filterProyectosByEstado(base, opt.key).length;
     }
     return counts;
-  }, [proyectos]);
+  }, [proyectos, zonaFilter]);
 
-  const filtered = useMemo(
-    () => filterProyectosByEstado(proyectos, estadoFilter),
-    [proyectos, estadoFilter]
-  );
+  const filtered = useMemo(() => {
+    let list = filterProyectosByEstado(proyectos, estadoFilter);
+    return filterProyectosByZona(list, zonaFilter);
+  }, [proyectos, estadoFilter, zonaFilter]);
 
   const visibleKpi =
-    estadoFilter === "all" ? kpi : computeKpiFromProyectos(filtered);
+    estadoFilter === "all" && zonaFilter === "all"
+      ? kpi
+      : computeKpiFromProyectos(filtered);
+
+  const alerts = useMemo(() => computeProyectoAlerts(filtered), [filtered]);
+  const alertIds = useMemo(() => new Set(alerts.map((a) => a.proyectoId)), [alerts]);
+  const monthCmp = useMemo(() => compareLatestMonths(monthlyTrend), [monthlyTrend]);
 
   const finalizados = filtered.filter((r) => r.estado?.toUpperCase().includes("FINAL"));
 
+  const filterLabel = [
+    ESTADO_FILTER_OPTIONS.find((o) => o.key === estadoFilter)?.label ?? "Todos",
+    zonaFilter === "all" ? "Todas las zonas" : `Zona ${zonaFilter}`,
+  ].join(" · ");
+
+  async function handleExportReport() {
+    setExporting(true);
+    try {
+      const { captureDashboardChartImages, exportDashboardPdf } = await import(
+        "@/lib/export-dashboard-pdf"
+      );
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const chartImages = captureDashboardChartImages();
+      await exportDashboardPdf({
+        kpi: visibleKpi,
+        proyectos: filtered,
+        filterLabel,
+        chartImages,
+        alerts,
+        itemCounts,
+      });
+    } finally {
+      setExporting(false);
+    }
+  }
+
   return (
     <>
+      <div className="dash-export-row">
+        <button
+          type="button"
+          className="btn btn-inline"
+          disabled={exporting || filtered.length === 0}
+          onClick={() => void handleExportReport()}
+        >
+          {exporting ? "Generando PDF…" : "Exportar reporte PDF"}
+        </button>
+        <span className="form-hint" style={{ margin: 0 }}>
+          KPIs, gráficos, alertas y tabla ({filterLabel.toLowerCase()})
+        </span>
+      </div>
+
       <div className="dash-filters dash-filters-general">
         {ESTADO_FILTER_OPTIONS.map((opt) => (
           <button
@@ -141,11 +252,51 @@ function GeneralView({
         ))}
       </div>
 
-      {estadoFilter !== "all" && (
+      <div className="dash-filters">
+        <button
+          type="button"
+          className={`dash-filter-chip${zonaFilter === "all" ? " active" : ""}`}
+          onClick={() => setZonaFilter("all")}
+        >
+          Todas las zonas
+        </button>
+        {zonaOptions.map((z) => (
+          <button
+            key={z.zona}
+            type="button"
+            className={`dash-filter-chip${zonaFilter === z.zona ? " active" : ""}`}
+            onClick={() => setZonaFilter(z.zona)}
+          >
+            Zona {z.zona} ({z.count})
+          </button>
+        ))}
+      </div>
+
+      {(estadoFilter !== "all" || zonaFilter !== "all") && (
         <p className="dash-filter-note">
-          Mostrando {filtered.length} de {proyectos.length} proyectos · KPIs y gráficos
-          filtrados
+          Mostrando {filtered.length} de {proyectos.length} proyectos · KPIs y gráficos filtrados
         </p>
+      )}
+
+      <AlertsPanel alerts={alerts} />
+
+      {monthCmp.current && (
+        <div className="dash-month-compare">
+          <span>
+            <strong>Corte {monthCmp.current.label}:</strong> avance prom. {monthCmp.current.avgAvance}%
+          </span>
+          {monthCmp.avanceDelta != null && (
+            <span className={monthCmp.avanceDelta >= 0 ? "delta-up" : "delta-down"}>
+              {monthCmp.avanceDelta >= 0 ? "▲" : "▼"} {Math.abs(monthCmp.avanceDelta)}% vs mes anterior
+            </span>
+          )}
+          {monthCmp.facturadoDelta != null && (
+            <span>
+              Facturación {monthCmp.facturadoDelta >= 0 ? "+" : ""}
+              {copExact(monthCmp.facturadoDelta)} vs mes anterior
+            </span>
+          )}
+        </div>
       )}
 
       <div className="kpi-row">
@@ -199,13 +350,14 @@ function GeneralView({
           facturado: Number(r.facturado),
           pendiente_facturar: Number(r.pendiente_facturar),
         }))}
+        monthlyTrend={monthlyTrend}
       />
 
       <div className="table-card">
         <div className="chart-title" style={{ marginBottom: 10 }}>
           Detalle completo — {filtered.length} proyecto{filtered.length !== 1 ? "s" : ""}
         </div>
-        <ProyectoTable rows={filtered} />
+        <ProyectoTable rows={filtered} itemCounts={itemCounts} alertIds={alertIds} />
       </div>
     </>
   );
@@ -214,11 +366,35 @@ function GeneralView({
 function UbicacionView({ proyectos }: { proyectos: DashboardProyecto[] }) {
   const zonas = useMemo(() => groupByUbicacion(proyectos), [proyectos]);
   const [zonaFilter, setZonaFilter] = useState<number | "all">("all");
+  const [exporting, setExporting] = useState(false);
 
   const visible = zonaFilter === "all" ? zonas : zonas.filter((z) => z.zona === zonaFilter);
+  const filterLabel =
+    zonaFilter === "all" ? "Todas las zonas" : `Zona ${zonaFilter}`;
+
+  async function handleExportUbicacion() {
+    setExporting(true);
+    try {
+      const { exportUbicacionPdf } = await import("@/lib/export-ubicacion-pdf");
+      await exportUbicacionPdf(visible, filterLabel);
+    } finally {
+      setExporting(false);
+    }
+  }
 
   return (
     <div className="dash-ubicacion">
+      <div className="dash-export-row">
+        <button
+          type="button"
+          className="btn btn-inline"
+          disabled={exporting || visible.length === 0}
+          onClick={() => void handleExportUbicacion()}
+        >
+          {exporting ? "Generando PDF…" : "Exportar por ubicación PDF"}
+        </button>
+      </div>
+
       <div className="dash-filters">
         <button
           type="button"
@@ -513,11 +689,39 @@ function ProyectoDetailView({
   );
 }
 
-export default function DashboardViews({ kpi, proyectos, itemsByProyecto, canManage }: Props) {
+export default function DashboardViews({
+  kpi,
+  proyectos,
+  itemsByProyecto,
+  itemCounts,
+  monthlyTrend,
+  canManage,
+}: Props) {
   const [view, setView] = useState<View>("general");
+  const [search, setSearch] = useState("");
+
+  const visibleProyectos = useMemo(
+    () => filterProyectosBySearch(proyectos, search),
+    [proyectos, search]
+  );
 
   return (
     <>
+      <div className="dash-global-search">
+        <input
+          type="search"
+          className="dash-proj-search"
+          placeholder="Buscar en todo el dashboard: proyecto, municipio, zona, estado…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        {search.trim() && (
+          <span className="form-hint">
+            {visibleProyectos.length} de {proyectos.length} proyectos
+          </span>
+        )}
+      </div>
+
       <div className="dash-tabs">
         <button
           type="button"
@@ -542,13 +746,20 @@ export default function DashboardViews({ kpi, proyectos, itemsByProyecto, canMan
         </button>
       </div>
 
-      {view === "general" && <GeneralView kpi={kpi} proyectos={proyectos} />}
+      {view === "general" && (
+        <GeneralView
+          kpi={kpi}
+          proyectos={visibleProyectos}
+          itemCounts={itemCounts}
+          monthlyTrend={monthlyTrend}
+        />
+      )}
 
-      {view === "ubicacion" && <UbicacionView proyectos={proyectos} />}
+      {view === "ubicacion" && <UbicacionView proyectos={visibleProyectos} />}
 
       {view === "proyecto" && (
         <ProyectoDetailView
-          proyectos={proyectos}
+          proyectos={visibleProyectos}
           itemsByProyecto={itemsByProyecto}
           canManage={canManage}
         />
