@@ -265,6 +265,10 @@ tbody tr:nth-child(even) {
   margin-bottom: 16px;
 }
 
+.chart-card-wide {
+  grid-column: 1 / -1;
+}
+
 .chart-card {
   background: #fff;
   border-radius: 10px;
@@ -684,6 +688,89 @@ tbody tr:nth-child(even) {
   align-items: center;
   gap: 12px;
   margin-bottom: 16px;
+}
+
+.dash-global-search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.dash-global-search .dash-proj-search {
+  flex: 1;
+  min-width: 240px;
+}
+
+.dash-alerts {
+  background: rgba(255, 200, 80, 0.12);
+  border: 1px solid rgba(255, 200, 80, 0.35);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.dash-alerts-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffc850;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.dash-alerts-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dash-alert {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+  color: #e8f0ff;
+  line-height: 1.4;
+}
+
+.dash-alert-icon {
+  flex-shrink: 0;
+}
+
+.dash-month-compare {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 12px;
+  color: #92b4e8;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+}
+
+.delta-up {
+  color: #1baf7a;
+  font-weight: 700;
+}
+
+.delta-down {
+  color: #e34948;
+  font-weight: 700;
+}
+
+.row-alert td {
+  background: rgba(255, 200, 80, 0.08);
+}
+
+.cell-muted {
+  font-size: 11px;
+  color: #92b4e8;
+  white-space: nowrap;
 }
 
 .proyecto-actions {

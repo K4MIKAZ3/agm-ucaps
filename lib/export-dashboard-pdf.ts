@@ -1,5 +1,6 @@
 import type { DashboardKpi, DashboardProyecto } from "@/lib/dashboard-utils";
-import { copExact, formatCierre } from "@/lib/dashboard-utils";
+import { copExact, formatUpdatedAt } from "@/lib/dashboard-utils";
+import type { ProyectoAlert } from "@/lib/dashboard-alerts";
 
 export type DashboardChartImage = {
   title: string;
@@ -11,6 +12,8 @@ export type DashboardExportOptions = {
   proyectos: DashboardProyecto[];
   filterLabel: string;
   chartImages: DashboardChartImage[];
+  alerts?: ProyectoAlert[];
+  itemCounts?: Record<string, number>;
 };
 
 function safeFilenamePart(text: string) {
@@ -53,6 +56,8 @@ export async function exportDashboardPdf({
   proyectos,
   filterLabel,
   chartImages,
+  alerts = [],
+  itemCounts = {},
 }: DashboardExportOptions) {
   const { default: jsPDF } = await import("jspdf");
   const { default: autoTable } = await import("jspdf-autotable");
@@ -111,6 +116,21 @@ export async function exportDashboardPdf({
   });
   y += 6;
 
+  if (alerts.length > 0) {
+    ensureSpace(12 + Math.min(alerts.length, 5) * 5);
+    doc.setFontSize(11);
+    doc.setTextColor(180, 80, 40);
+    doc.text(`Alertas (${alerts.length})`, margin, y);
+    y += 5;
+    doc.setFontSize(8);
+    doc.setTextColor(80, 60, 40);
+    alerts.slice(0, 6).forEach((a) => {
+      doc.text(`• ${a.nombre} (Z${a.zona}): ${a.message}`, margin, y);
+      y += 4;
+    });
+    y += 4;
+  }
+
   if (chartImages.length > 0) {
     doc.setFontSize(11);
     doc.setTextColor(13, 47, 110);
@@ -145,16 +165,17 @@ export async function exportDashboardPdf({
   autoTable(doc, {
     startY: y + 2,
     margin: { left: margin, right: margin },
-    head: [["Zona", "Municipio", "Proyecto", "Valor", "Avance", "Facturado", "Estado", "Cierre"]],
+    head: [["Zona", "Municipio", "Proyecto", "Ít.", "Valor", "Avance", "Facturado", "Estado", "Actualizado"]],
     body: proyectos.map((p) => [
       String(p.zona),
       p.municipio,
       p.nombre_corto,
+      String(itemCounts[p.id] ?? 0),
       copExact(Number(p.valor_ucaps)),
       `${Math.min(Number(p.avance_fisico ?? 0), 100)}%`,
       copExact(Number(p.facturado)),
       p.estado ?? "—",
-      formatCierre(p),
+      formatUpdatedAt(p.updated_at),
     ]),
     styles: { fontSize: 7, cellPadding: 1.5 },
     headStyles: { fillColor: [13, 47, 110], textColor: 255 },

@@ -8,8 +8,12 @@ import {
   CategoryScale,
   LinearScale,
   BarElement,
+  LineElement,
+  PointElement,
+  Filler,
 } from "chart.js";
-import { Doughnut, Bar } from "react-chartjs-2";
+import { Doughnut, Bar, Line } from "react-chartjs-2";
+import type { MonthlyPortfolioPoint } from "@/lib/dashboard-snapshots";
 
 ChartJS.register(
   ArcElement,
@@ -17,7 +21,10 @@ ChartJS.register(
   Legend,
   CategoryScale,
   LinearScale,
-  BarElement
+  BarElement,
+  LineElement,
+  PointElement,
+  Filler
 );
 
 export type ChartProyecto = {
@@ -41,6 +48,7 @@ export type EstadoCounts = {
 type Props = {
   estados: EstadoCounts;
   proyectos: ChartProyecto[];
+  monthlyTrend?: MonthlyPortfolioPoint[];
 };
 
 const ZONA_COLORS = ["#2a78d6", "#1baf7a", "#eda100", "#4a3aa7", "#e34948"];
@@ -55,7 +63,7 @@ function truncateLabel(label: string, max = 12) {
   return label.length > max ? `${label.substring(0, max)}…` : label;
 }
 
-export default function DashboardCharts({ estados, proyectos }: Props) {
+export default function DashboardCharts({ estados, proyectos, monthlyTrend = [] }: Props) {
   const donutLabels = ["Ejecución", "Finalizado", "En Compras", "Pausado"];
   const donutValues = [
     estados.ejecucion,
@@ -192,6 +200,52 @@ export default function DashboardCharts({ estados, proyectos }: Props) {
           )}
         </div>
       </div>
+
+      {monthlyTrend.length > 0 && (
+        <div className="chart-card chart-card-wide">
+          <div className="chart-title">Tendencia de avance del portafolio (promedio mensual)</div>
+          <div className="chart-box chart-box-md">
+            <Line
+              data={{
+                labels: monthlyTrend.map((m) => m.label),
+                datasets: [
+                  {
+                    label: "Avance prom. %",
+                    data: monthlyTrend.map((m) => m.avgAvance),
+                    borderColor: "#2a78d6",
+                    backgroundColor: "rgba(42, 120, 214, 0.12)",
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 4,
+                    pointBackgroundColor: "#2a78d6",
+                  },
+                ],
+              }}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                  y: {
+                    min: 0,
+                    max: 100,
+                    ticks: {
+                      callback: (v) => `${v}%`,
+                      font: { size: 9 },
+                      color: tickColor,
+                    },
+                    grid: { color: "#e1e0d9" },
+                  },
+                  x: {
+                    ticks: { font: { size: 9 }, color: "#52514e" },
+                    grid: { display: false },
+                  },
+                },
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       <div className="chart-card">
         <div className="chart-title">Valor contrato por zona (COP)</div>
