@@ -16,6 +16,7 @@ import {
 } from "@/lib/dashboard-utils";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 function dashboardError(message: string) {
   return (

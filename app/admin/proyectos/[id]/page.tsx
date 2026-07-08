@@ -7,6 +7,7 @@ import ItemRow, { type ProyectoItem } from "./item-row";
 import ProyectoActions from "../proyecto-actions";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 function avanceBarColor(pct: number) {
   if (pct >= 80) return "#1baf7a";

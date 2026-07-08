@@ -4,6 +4,7 @@ import { getProfile, canManageProyectos } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export default async function NuevoProyectoPage() {
   const { profile } = await getProfile();

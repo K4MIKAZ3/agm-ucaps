@@ -3,6 +3,7 @@ import Link from "next/link";
 import { updateDashboardLogoAndRedirect } from "@/app/actions/branding";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export default async function BrandingAdminPage({
   searchParams,

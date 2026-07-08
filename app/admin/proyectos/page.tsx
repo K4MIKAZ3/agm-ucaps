@@ -5,6 +5,7 @@ import { archiveProyecto, deleteProyecto } from "@/app/actions/proyectos";
 import ProyectoActions from "./proyecto-actions";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export default async function AdminProyectosPage() {
   const supabase = await createClient();
