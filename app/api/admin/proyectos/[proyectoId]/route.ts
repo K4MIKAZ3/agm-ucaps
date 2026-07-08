@@ -5,6 +5,7 @@ import {
   deleteProyectoRecord,
   getProyectoSummary,
 } from "@/lib/proyecto-items";
+import { restoreProyectoRecord } from "@/lib/proyecto-admin";
 
 export const runtime = "nodejs";
 
@@ -44,6 +45,14 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
         return NextResponse.json({ error: result.error }, { status: 400 });
       }
       return NextResponse.json({ ok: true, message: "Proyecto archivado" });
+    }
+
+    if (body.action === "restore") {
+      const result = await restoreProyectoRecord(auth.session.db, proyectoId);
+      if (result.error) {
+        return NextResponse.json({ error: result.error }, { status: 400 });
+      }
+      return NextResponse.json({ ok: true, message: "Proyecto restaurado" });
     }
 
     const avance_calculado_auto = body.avance_calculado_auto === true;
