@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, hasAdminClient } from "@/lib/supabase/admin";
 import Link from "next/link";
 import { getProfile, canManageProyectos } from "@/lib/auth";
 import { archiveProyecto, deleteProyecto } from "@/app/actions/proyectos";
@@ -8,7 +9,7 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export default async function AdminProyectosPage() {
-  const supabase = await createClient();
+  const supabase = hasAdminClient() ? createAdminClient() : await createClient();
   const { profile } = await getProfile();
   const canManage = canManageProyectos(profile?.rol);
   const canDeletePermanent = canManage;

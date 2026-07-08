@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, hasAdminClient } from "@/lib/supabase/admin";
 import { updateProyectoEstado, archiveProyecto, deleteProyecto } from "@/app/actions/proyectos";
 import { getProfile, canManageProyectos, canEditAvance } from "@/lib/auth";
 import Link from "next/link";
@@ -23,7 +24,7 @@ export default async function ProyectoDetailPage({
 }) {
   try {
     const { id } = await params;
-    const supabase = await createClient();
+    const supabase = hasAdminClient() ? createAdminClient() : await createClient();
     const { profile } = await getProfile();
     const canManage = canManageProyectos(profile?.rol);
     const canEdit = canEditAvance(profile?.rol);

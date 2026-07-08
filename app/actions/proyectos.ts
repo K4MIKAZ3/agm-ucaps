@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, hasAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { actionError, actionSuccess, type ActionResult } from "@/lib/action-result";
 
@@ -20,7 +21,7 @@ async function requireManager() {
   if (!profile || !["super_admin", "admin"].includes(profile.rol)) {
     throw new Error("Sin permiso");
   }
-  return supabase;
+  return hasAdminClient() ? createAdminClient() : supabase;
 }
 
 async function requireAvanceEditor() {
@@ -39,7 +40,7 @@ async function requireAvanceEditor() {
   if (!profile || !["super_admin", "admin", "editor"].includes(profile.rol)) {
     throw new Error("Sin permiso para registrar avance");
   }
-  return supabase;
+  return hasAdminClient() ? createAdminClient() : supabase;
 }
 
 async function requireSuperAdmin() {
@@ -58,7 +59,7 @@ async function requireSuperAdmin() {
   if (!profile || !["super_admin", "admin"].includes(profile.rol) || profile.activo === false) {
     throw new Error("Sin permiso para eliminar proyectos permanentemente (admin o super admin)");
   }
-  return supabase;
+  return hasAdminClient() ? createAdminClient() : supabase;
 }
 
 function revalidateProyecto(proyectoId: string) {
