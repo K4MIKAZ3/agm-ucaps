@@ -31,8 +31,7 @@ export default function ItemAddForm({
     <form className="card form-wide item-add-form" action={action}>
       <h2 className="section-title">Añadir ítem al proyecto</h2>
       <p className="form-hint">
-        Cada proyecto tiene sus propias actividades. Escribe la descripción manualmente o elige
-        una plantilla del catálogo para rellenar el nombre.
+        Cada proyecto tiene sus propias actividades. Escribe la descripción manualmente.
       </p>
 
       <input type="hidden" name="proyecto_id" value={proyectoId} />
@@ -52,18 +51,6 @@ export default function ItemAddForm({
               <option key={a.id} value={a.nombre} />
             ))}
           </datalist>
-        </div>
-
-        <div className="field">
-          <label htmlFor="actividad_id">Plantilla catálogo (opcional)</label>
-          <select id="actividad_id" name="actividad_id" defaultValue="">
-            <option value="">Ninguna — solo texto manual</option>
-            {actividades.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.nombre}
-              </option>
-            ))}
-          </select>
         </div>
 
         <div className="field">
