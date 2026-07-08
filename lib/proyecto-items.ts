@@ -220,3 +220,38 @@ export async function anularProyectoItemRecord(
   if (error) return { error: error.message };
   return { ok: true as const };
 }
+
+export async function archiveProyectoRecord(db: SupabaseClient, proyectoId: string) {
+  const { data, error } = await db
+    .from("proyectos")
+    .update({ activo: false })
+    .eq("id", proyectoId)
+    .select("id")
+    .single();
+
+  if (error) return { error: error.message };
+  if (!data) {
+    return {
+      error:
+        "No se pudo archivar el proyecto. Falta permiso (RLS) o el proyecto no existe.",
+    };
+  }
+  return { ok: true as const };
+}
+
+export async function deleteProyectoRecord(db: SupabaseClient, proyectoId: string) {
+  const { data, error } = await db
+    .from("proyectos")
+    .delete()
+    .eq("id", proyectoId)
+    .select("id");
+
+  if (error) return { error: error.message };
+  if (!data || data.length === 0) {
+    return {
+      error:
+        "No se eliminó ningún registro. Aplica la migración 10_rls_delete_admin.sql en Supabase o configura SUPABASE_SERVICE_ROLE_KEY en Vercel.",
+    };
+  }
+  return { ok: true as const };
+}

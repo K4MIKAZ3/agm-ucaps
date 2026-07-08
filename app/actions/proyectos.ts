@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { requireManagerSession } from "@/lib/admin-session";
-import { actionError, actionSuccess, type ActionResult } from "@/lib/action-result";
 
 function checkboxOn(formData: FormData, name: string) {
   return formData.get(name) === "on";
@@ -47,42 +46,4 @@ export async function createProyecto(formData: FormData) {
   revalidatePath("/dashboard");
   revalidatePath("/admin/proyectos");
   return data.id as string;
-}
-
-export async function archiveProyecto(formData: FormData): Promise<ActionResult> {
-  try {
-    const auth = await requireManagerSession();
-    if (!auth.ok) return actionError(auth.error);
-
-    const id = String(formData.get("proyecto_id"));
-    if (!id) return actionError("Proyecto requerido");
-
-    const { error } = await auth.session.db.from("proyectos").update({ activo: false }).eq("id", id);
-    if (error) return actionError(error.message);
-
-    revalidatePath("/admin/proyectos");
-    revalidatePath("/dashboard");
-    return actionSuccess("Proyecto archivado (ya no aparece en el dashboard)");
-  } catch (e) {
-    return actionError(e instanceof Error ? e.message : "No se pudo archivar el proyecto");
-  }
-}
-
-export async function deleteProyecto(formData: FormData): Promise<ActionResult> {
-  try {
-    const auth = await requireManagerSession();
-    if (!auth.ok) return actionError(auth.error);
-
-    const id = String(formData.get("proyecto_id"));
-    if (!id) return actionError("Proyecto requerido");
-
-    const { error } = await auth.session.db.from("proyectos").delete().eq("id", id);
-    if (error) return actionError(error.message);
-
-    revalidatePath("/admin/proyectos");
-    revalidatePath("/dashboard");
-    return actionSuccess("Proyecto eliminado permanentemente");
-  } catch (e) {
-    return actionError(e instanceof Error ? e.message : "No se pudo eliminar el proyecto");
-  }
 }

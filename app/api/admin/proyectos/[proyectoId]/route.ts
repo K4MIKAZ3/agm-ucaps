@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { requireManagerSession } from "@/lib/admin-session";
-import { getProyectoSummary } from "@/lib/proyecto-items";
+import {
+  archiveProyectoRecord,
+  deleteProyectoRecord,
+  getProyectoSummary,
+} from "@/lib/proyecto-items";
 
 export const runtime = "nodejs";
 
@@ -34,6 +38,14 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
     const { proyectoId } = await ctx.params;
     const body = (await req.json()) as Record<string, unknown>;
 
+    if (body.action === "archive") {
+      const result = await archiveProyectoRecord(auth.session.db, proyectoId);
+      if (result.error) {
+        return NextResponse.json({ error: result.error }, { status: 400 });
+      }
+      return NextResponse.json({ ok: true, message: "Proyecto archivado" });
+    }
+
     const avance_calculado_auto = body.avance_calculado_auto === true;
     const payload: Record<string, unknown> = {
       estado_id: body.estado_id ? String(body.estado_id) : null,
@@ -66,6 +78,29 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Error al guardar estado" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(_req: Request, ctx: RouteCtx) {
+  const auth = await requireManagerSession();
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
+  try {
+    const { proyectoId } = await ctx.params;
+    const result = await deleteProyectoRecord(auth.session.db, proyectoId);
+
+    if (result.error) {
+      return NextResponse.json({ error: result.error }, { status: 400 });
+    }
+
+    return NextResponse.json({ ok: true, message: "Proyecto eliminado permanentemente" });
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Error al eliminar proyecto" },
       { status: 500 }
     );
   }
