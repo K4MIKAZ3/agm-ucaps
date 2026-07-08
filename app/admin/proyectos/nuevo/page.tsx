@@ -44,7 +44,7 @@ export default async function NuevoProyectoPage() {
               const zona = Array.isArray(m.zonas) ? m.zonas[0] : m.zonas;
               return (
                 <option key={m.id} value={m.id}>
-                  Zona {zona?.codigo ?? "?"} — {m.nombre}
+                  Zona {zona?.codigo ?? "?"}
                 </option>
               );
             })}

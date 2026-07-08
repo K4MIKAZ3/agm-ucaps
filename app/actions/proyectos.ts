@@ -51,12 +51,12 @@ async function requireSuperAdmin() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("rol")
+    .select("rol, activo")
     .eq("id", user.id)
     .single();
 
-  if (profile?.rol !== "super_admin") {
-    throw new Error("Solo super admin puede eliminar proyectos permanentemente");
+  if (!profile || !["super_admin", "admin"].includes(profile.rol) || profile.activo === false) {
+    throw new Error("Sin permiso para eliminar proyectos permanentemente (admin o super admin)");
   }
   return supabase;
 }

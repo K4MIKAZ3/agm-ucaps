@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import { getProfile, canManageProyectos, isSuperAdmin } from "@/lib/auth";
+import { getProfile, canManageProyectos } from "@/lib/auth";
 import { archiveProyecto, deleteProyecto } from "@/app/actions/proyectos";
 import ProyectoActions from "./proyecto-actions";
 
@@ -8,7 +8,7 @@ export default async function AdminProyectosPage() {
   const supabase = await createClient();
   const { profile } = await getProfile();
   const canManage = canManageProyectos(profile?.rol);
-  const canDeletePermanent = isSuperAdmin(profile?.rol);
+  const canDeletePermanent = canManage;
 
   const { data: proyectos } = await supabase
     .from("v_dashboard_proyectos")
