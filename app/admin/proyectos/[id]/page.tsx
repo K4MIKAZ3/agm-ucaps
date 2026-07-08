@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient, hasAdminClient } from "@/lib/supabase/admin";
 import { getProfile, canManageProyectos, canEditAvance } from "@/lib/auth";
 import { mapItemRow } from "@/lib/proyecto-items";
+import { fetchProyectoHeader } from "@/lib/proyecto-admin";
 import Link from "next/link";
 import ProyectoActions from "../proyecto-actions";
 import ProyectoDetailShell from "./proyecto-detail-shell";
@@ -21,20 +22,17 @@ export default async function ProyectoDetailPage({
   const canEdit = canEditAvance(profile?.rol);
   const canDeletePermanent = canManage;
 
-  const { data: proyecto, error: proyectoError } = await supabase
-    .from("v_dashboard_proyectos")
-    .select("*")
-    .eq("id", id)
-    .single();
+  const proyecto = await fetchProyectoHeader(supabase, id);
 
   if (!proyecto) {
     return (
       <div className="alert-warn">
-        <strong>No se pudo cargar el proyecto.</strong>{" "}
-        {proyectoError?.message || "No hay datos o falta permiso (RLS)."}
+        <strong>No se pudo cargar el proyecto.</strong> No hay datos o falta permiso (RLS).
       </div>
     );
   }
+
+  const isArchived = !proyecto.activo;
 
   const { data: proyectoRaw, error: proyectoRawError } = await supabase
     .from("proyectos")
@@ -97,6 +95,11 @@ export default async function ProyectoDetailPage({
           <h1>{proyecto.nombre_corto}</h1>
           <p style={{ color: "#92b4e8", fontSize: 12, marginTop: 4 }}>
             {proyecto.municipio} · Zona {proyecto.zona} · {proyecto.estado ?? "Sin estado"}
+            {isArchived && (
+              <span className="badge b-ps" style={{ marginLeft: 8 }}>
+                Archivado
+              </span>
+            )}
           </p>
         </div>
         <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
@@ -105,8 +108,15 @@ export default async function ProyectoDetailPage({
             nombre={proyecto.nombre_corto}
             canManage={canManage}
             canDeletePermanent={canDeletePermanent}
+            archived={isArchived}
+            redirectAfterDelete={
+              isArchived ? "/admin/proyectos?vista=archivados" : "/admin/proyectos"
+            }
           />
-          <Link className="btn-link" href="/admin/proyectos">
+          <Link
+            className="btn-link"
+            href={isArchived ? "/admin/proyectos?vista=archivados" : "/admin/proyectos"}
+          >
             ← Volver
           </Link>
         </div>
@@ -115,11 +125,11 @@ export default async function ProyectoDetailPage({
       <ProyectoDetailShell
         proyectoId={id}
         initialSummary={{
-          avance_fisico: Number(proyecto.avance_fisico ?? 0),
-          facturado: Number(proyecto.facturado ?? 0),
-          pendiente_facturar: Number(proyecto.pendiente_facturar ?? 0),
-          valor_ucaps: Number(proyecto.valor_ucaps ?? 0),
-          estado: proyecto.estado ?? null,
+          avance_fisico: proyecto.avance_fisico,
+          facturado: proyecto.facturado,
+          pendiente_facturar: proyecto.pendiente_facturar,
+          valor_ucaps: proyecto.valor_ucaps,
+          estado: proyecto.estado,
         }}
         initialItems={items}
         initialConfig={{
