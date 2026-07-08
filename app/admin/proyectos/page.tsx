@@ -4,6 +4,8 @@ import { getProfile, canManageProyectos } from "@/lib/auth";
 import { archiveProyecto, deleteProyecto } from "@/app/actions/proyectos";
 import ProyectoActions from "./proyecto-actions";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminProyectosPage() {
   const supabase = await createClient();
   const { profile } = await getProfile();

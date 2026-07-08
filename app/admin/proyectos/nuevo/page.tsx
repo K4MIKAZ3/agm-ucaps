@@ -3,6 +3,8 @@ import { createProyecto } from "@/app/actions/proyectos";
 import { getProfile, canManageProyectos } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 export default async function NuevoProyectoPage() {
   const { profile } = await getProfile();
   if (!canManageProyectos(profile?.rol)) redirect("/admin/proyectos");

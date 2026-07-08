@@ -6,6 +6,8 @@ import ItemAddForm from "./item-add-form";
 import ItemRow, { type ProyectoItem } from "./item-row";
 import ProyectoActions from "../proyecto-actions";
 
+export const dynamic = "force-dynamic";
+
 function avanceBarColor(pct: number) {
   if (pct >= 80) return "#1baf7a";
   if (pct >= 50) return "#2a78d6";
