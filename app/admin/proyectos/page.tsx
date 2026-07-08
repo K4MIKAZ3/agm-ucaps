@@ -2,37 +2,54 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient, hasAdminClient } from "@/lib/supabase/admin";
 import Link from "next/link";
 import { getProfile, canManageProyectos } from "@/lib/auth";
+import { listProyectosAdmin } from "@/lib/proyecto-admin";
 import ProyectoActions from "./proyecto-actions";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-export default async function AdminProyectosPage() {
+export default async function AdminProyectosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ vista?: string }>;
+}) {
+  const { vista } = await searchParams;
+  const showArchived = vista === "archivados";
+
   const supabase = hasAdminClient() ? createAdminClient() : await createClient();
   const { profile } = await getProfile();
   const canManage = canManageProyectos(profile?.rol);
   const canDeletePermanent = canManage;
 
-  const { data: proyectos } = await supabase
-    .from("v_dashboard_proyectos")
-    .select("id, zona, municipio, nombre_corto, valor_ucaps, avance_fisico, estado")
-    .order("zona")
-    .order("municipio");
+  const proyectos = await listProyectosAdmin(supabase, showArchived);
 
   return (
     <>
       <div className="topbar">
         <div>
-          <h1>Gestión de proyectos</h1>
+          <h1>{showArchived ? "Proyectos archivados" : "Gestión de proyectos"}</h1>
           <p style={{ color: "#92b4e8", fontSize: 12, marginTop: 4 }}>
-            Crear, editar, archivar y eliminar proyectos UCAPS
+            {showArchived
+              ? "Proyectos ocultos del dashboard. Restáuralos o elimínalos."
+              : "Crear, editar, archivar y eliminar proyectos UCAPS"}
           </p>
         </div>
-        {canManage && (
-          <Link className="btn-link" href="/admin/proyectos/nuevo">
-            + Nuevo proyecto
-          </Link>
-        )}
+        <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+          {showArchived ? (
+            <Link className="btn-link" href="/admin/proyectos">
+              ← Proyectos activos
+            </Link>
+          ) : (
+            <Link className="btn-link" href="/admin/proyectos?vista=archivados">
+              Ver archivados
+            </Link>
+          )}
+          {canManage && !showArchived && (
+            <Link className="btn-link" href="/admin/proyectos/nuevo">
+              + Nuevo proyecto
+            </Link>
+          )}
+        </div>
       </div>
 
       <div className="table-card">
@@ -50,23 +67,29 @@ export default async function AdminProyectosPage() {
               </tr>
             </thead>
             <tbody>
-              {(proyectos ?? []).length === 0 ? (
+              {proyectos.length === 0 ? (
                 <tr>
                   <td colSpan={7} style={{ textAlign: "center", padding: 24 }}>
-                    No hay proyectos.{" "}
-                    {canManage && (
-                      <Link href="/admin/proyectos/nuevo">Crear el primero</Link>
+                    {showArchived ? (
+                      "No hay proyectos archivados."
+                    ) : (
+                      <>
+                        No hay proyectos activos.{" "}
+                        {canManage && (
+                          <Link href="/admin/proyectos/nuevo">Crear el primero</Link>
+                        )}
+                      </>
                     )}
                   </td>
                 </tr>
               ) : (
-                proyectos!.map((p) => (
-                  <tr key={p.id}>
+                proyectos.map((p) => (
+                  <tr key={p.id} className={showArchived ? "row-inactive" : undefined}>
                     <td>{p.zona}</td>
                     <td>{p.municipio}</td>
                     <td style={{ fontWeight: 600 }}>{p.nombre_corto}</td>
-                    <td>${Number(p.valor_ucaps).toLocaleString("es-CO")}</td>
-                    <td>{p.avance_fisico ?? 0}%</td>
+                    <td>${p.valor_ucaps.toLocaleString("es-CO")}</td>
+                    <td>{p.avance_fisico}%</td>
                     <td>{p.estado ?? "—"}</td>
                     <td>
                       <div className="item-row-actions">
@@ -78,6 +101,10 @@ export default async function AdminProyectosPage() {
                           nombre={p.nombre_corto}
                           canManage={canManage}
                           canDeletePermanent={canDeletePermanent}
+                          archived={showArchived}
+                          redirectAfterDelete={
+                            showArchived ? "/admin/proyectos?vista=archivados" : "/admin/proyectos"
+                          }
                           compact
                         />
                       </div>
