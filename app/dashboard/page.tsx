@@ -70,6 +70,7 @@ export default async function DashboardPage() {
     let proyectosRaw: Array<Record<string, unknown>> | null = null;
     let itemsRaw: Array<Record<string, unknown>> | null = null;
     let snapshotsRaw: Array<Record<string, unknown>> | null = null;
+    let logoUrl: string | null = null;
 
     try {
       const [kpiResult, proyectosResult, itemsResult, snapshotsResult] = await Promise.all([
@@ -113,6 +114,24 @@ export default async function DashboardPage() {
       proyectosRaw = proyectosResult.data;
       itemsRaw = itemsResult.data;
       snapshotsRaw = snapshotsResult.data;
+
+      // Logo del dashboard (opcional)
+      try {
+        const { data: brandingRow } = await supabase
+          .from("branding")
+          .select("logo_object_path")
+          .maybeSingle();
+        const path = brandingRow?.logo_object_path;
+        if (path) {
+          const { data: urlData } = supabase.storage
+            .from("branding")
+            .getPublicUrl(path);
+          logoUrl = urlData.publicUrl;
+        }
+      } catch {
+        // Si no existe aún la migración de branding/logo, no rompas el dashboard.
+        logoUrl = null;
+      }
     } catch (error) {
       loadError =
         error instanceof Error
@@ -184,12 +203,18 @@ export default async function DashboardPage() {
     return (
       <main className="wrap">
         <div className="topbar">
-          <div>
-            <h1>ESTADO DE PROYECTOS AGM</h1>
-            <p style={{ color: "#92b4e8", fontSize: 12, marginTop: 4 }}>
-              {profile?.nombre ?? profile?.email} · Dashboard Gerencial ·{" "}
-              {profile?.rol ?? "usuario"}
-            </p>
+          <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+            {logoUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={logoUrl} alt="AGM" className="brand-logo" />
+            )}
+            <div>
+              <h1>ESTADO DE PROYECTOS AGM</h1>
+              <p style={{ color: "#92b4e8", fontSize: 12, marginTop: 4 }}>
+                {profile?.nombre ?? profile?.email} · Dashboard Gerencial ·{" "}
+                {profile?.rol ?? "usuario"}
+              </p>
+            </div>
           </div>
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
             {canManageProyectos(profile?.rol) && (

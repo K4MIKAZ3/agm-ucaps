@@ -21,6 +21,9 @@ export default async function AdminLayout({
         {canManageProyectos(profile?.rol) && (
           <Link href="/admin/proyectos/nuevo">+ Nuevo proyecto</Link>
         )}
+        {canManageProyectos(profile?.rol) && (
+          <Link href="/admin/branding">Logo (branding)</Link>
+        )}
         {canManageUsuarios(profile?.rol) && (
           <Link href="/admin/configuracion/usuarios">Configuración</Link>
         )}
