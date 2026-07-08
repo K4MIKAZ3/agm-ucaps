@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { updateProyectoEstado, archiveProyecto, deleteProyecto } from "@/app/actions/proyectos";
 import { getProfile, canManageProyectos, canEditAvance } from "@/lib/auth";
-import { notFound } from "next/navigation";
 import Link from "next/link";
 import ItemAddForm from "./item-add-form";
 import ItemRow, { type ProyectoItem } from "./item-row";
@@ -19,113 +18,168 @@ export default async function ProyectoDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
-  const supabase = await createClient();
-  const { profile } = await getProfile();
-  const canManage = canManageProyectos(profile?.rol);
-  const canEdit = canEditAvance(profile?.rol);
-  const canDeletePermanent = canManage;
-  const proyectoActions = { archiveProyecto, deleteProyecto };
+  try {
+    const { id } = await params;
+    const supabase = await createClient();
+    const { profile } = await getProfile();
+    const canManage = canManageProyectos(profile?.rol);
+    const canEdit = canEditAvance(profile?.rol);
+    const canDeletePermanent = canManage;
+    const proyectoActions = { archiveProyecto, deleteProyecto };
 
-  const { data: proyecto } = await supabase
-    .from("v_dashboard_proyectos")
-    .select("*")
-    .eq("id", id)
-    .single();
+    const { data: proyecto, error: proyectoError } = await supabase
+      .from("v_dashboard_proyectos")
+      .select("*")
+      .eq("id", id)
+      .single();
 
-  if (!proyecto) notFound();
+    if (!proyecto) {
+      return (
+        <main className="wrap">
+          <div className="topbar">
+            <div>
+              <h1>Proyecto</h1>
+            </div>
+            <Link className="btn-link" href="/admin/proyectos">
+              ← Volver
+            </Link>
+          </div>
+          <div className="alert-warn">
+            <strong>No se pudo cargar el proyecto.</strong>{" "}
+            {proyectoError?.message || "No hay datos o falta permiso (RLS)."}
+          </div>
+        </main>
+      );
+    }
 
-  const { data: proyectoRaw } = await supabase
-    .from("proyectos")
-    .select("estado_id, avance_calculado_auto, estado_operativo")
-    .eq("id", id)
-    .single();
+    const { data: proyectoRaw, error: proyectoRawError } = await supabase
+      .from("proyectos")
+      .select("estado_id, avance_calculado_auto, estado_operativo")
+      .eq("id", id)
+      .single();
 
-  const [
-    { data: itemsRaw },
-    { data: actividades },
-    { data: unidades },
-    { data: categorias },
-    { data: estados },
-  ] = await Promise.all([
-    supabase
-      .from("proyecto_items")
-      .select(
-        `
+    if (!proyectoRaw && proyectoRawError) {
+      return (
+        <main className="wrap">
+          <div className="topbar">
+            <div>
+              <h1>Proyecto</h1>
+            </div>
+            <Link className="btn-link" href="/admin/proyectos">
+              ← Volver
+            </Link>
+          </div>
+          <div className="alert-warn">
+            <strong>No se pudo cargar la configuración del proyecto.</strong> {proyectoRawError.message}
+          </div>
+        </main>
+      );
+    }
+
+    const [
+      { data: itemsRaw, error: itemsError },
+      { data: actividades },
+      { data: unidades },
+      { data: categorias },
+      { data: estados },
+    ] = await Promise.all([
+      supabase
+        .from("proyecto_items")
+        .select(
+          `
         id, numero_item, orden, actividad_id, descripcion_override, categoria_id, unidad_id,
         cantidad_total, cantidad_ejecutada, valor_unitario, valor_ejecutado, avance_pct, observaciones,
         unidades_medida ( codigo ),
         actividades_catalogo ( nombre ),
         categorias_item ( nombre )
       `
-      )
-      .eq("proyecto_id", id)
-      .eq("anulado", false)
-      .order("numero_item"),
-    supabase
-      .from("actividades_catalogo")
-      .select("id, nombre")
-      .eq("activo", true)
-      .order("nombre"),
-    supabase.from("unidades_medida").select("id, codigo, nombre").eq("activo", true),
-    supabase.from("categorias_item").select("id, nombre, codigo").eq("activo", true),
-    supabase.from("estados_proyecto").select("id, nombre, codigo").order("orden"),
-  ]);
+        )
+        .eq("proyecto_id", id)
+        .eq("anulado", false)
+        .order("numero_item"),
+      supabase
+        .from("actividades_catalogo")
+        .select("id, nombre")
+        .eq("activo", true)
+        .order("nombre"),
+      supabase.from("unidades_medida").select("id, codigo, nombre").eq("activo", true),
+      supabase.from("categorias_item").select("id, nombre, codigo").eq("activo", true),
+      supabase.from("estados_proyecto").select("id, nombre, codigo").order("orden"),
+    ]);
 
-  const items: ProyectoItem[] = (itemsRaw ?? []).map((row) => {
-    const um = row.unidades_medida as { codigo: string } | { codigo: string }[] | null;
-    const ac = row.actividades_catalogo as { nombre: string } | { nombre: string }[] | null;
-    const unidad = Array.isArray(um) ? um[0]?.codigo : um?.codigo;
-    const catalogNombre = Array.isArray(ac) ? ac[0]?.nombre : ac?.nombre;
-    return {
-      id: row.id,
-      numero_item: row.numero_item,
-      actividad_id: row.actividad_id,
-      categoria_id: row.categoria_id,
-      unidad_id: row.unidad_id,
-      actividad: row.descripcion_override ?? catalogNombre ?? "—",
-      categoria: null,
-      unidad: unidad ?? "—",
-      cantidad_total: Number(row.cantidad_total),
-      cantidad_ejecutada: Number(row.cantidad_ejecutada ?? 0),
-      valor_unitario: Number(row.valor_unitario),
-      valor_ejecutado: Number(row.valor_ejecutado ?? 0),
-      avance_pct: Number(row.avance_pct ?? 0),
-      observaciones: row.observaciones,
-    };
-  });
+    if (itemsError) {
+      return (
+        <main className="wrap">
+          <div className="topbar">
+            <div>
+              <h1>Proyecto</h1>
+            </div>
+            <Link className="btn-link" href="/admin/proyectos">
+              ← Volver
+            </Link>
+          </div>
+          <div className="alert-warn">
+            <strong>No se pudieron cargar los ítems.</strong> {itemsError.message}
+          </div>
+        </main>
+      );
+    }
 
-  async function saveEstado(formData: FormData) {
-    "use server";
-    formData.set("proyecto_id", id);
-    await updateProyectoEstado(formData);
-  }
+    const items: ProyectoItem[] = (itemsRaw ?? []).map((row) => {
+      const um = row.unidades_medida as { codigo: string } | { codigo: string }[] | null;
+      const ac =
+        row.actividades_catalogo as { nombre: string } | { nombre: string }[] | null;
+      const unidad = Array.isArray(um) ? um[0]?.codigo : um?.codigo;
+      const catalogNombre = Array.isArray(ac) ? ac[0]?.nombre : ac?.nombre;
+      return {
+        id: row.id,
+        numero_item: row.numero_item,
+        actividad_id: row.actividad_id,
+        categoria_id: row.categoria_id,
+        unidad_id: row.unidad_id,
+        actividad: row.descripcion_override ?? catalogNombre ?? "—",
+        categoria: null,
+        unidad: unidad ?? "—",
+        cantidad_total: Number(row.cantidad_total),
+        cantidad_ejecutada: Number(row.cantidad_ejecutada ?? 0),
+        valor_unitario: Number(row.valor_unitario),
+        valor_ejecutado: Number(row.valor_ejecutado ?? 0),
+        avance_pct: Number(row.avance_pct ?? 0),
+        observaciones: row.observaciones,
+      };
+    });
 
-  const avanceAuto = proyectoRaw?.avance_calculado_auto !== false;
-  const nextNumero = (items.length ?? 0) + 1;
+    async function saveEstado(formData: FormData) {
+      "use server";
+      formData.set("proyecto_id", id);
+      await updateProyectoEstado(formData);
+    }
 
-  return (
-    <>
-      <div className="topbar">
-        <div>
-          <h1>{proyecto.nombre_corto}</h1>
-          <p style={{ color: "#92b4e8", fontSize: 12, marginTop: 4 }}>
-            {proyecto.municipio} · Zona {proyecto.zona} · {proyecto.estado ?? "Sin estado"}
-          </p>
+    const avanceAuto = proyectoRaw?.avance_calculado_auto !== false;
+    const nextNumero = (items.length ?? 0) + 1;
+
+    return (
+      <>
+        <div className="topbar">
+          <div>
+            <h1>{proyecto.nombre_corto}</h1>
+            <p style={{ color: "#92b4e8", fontSize: 12, marginTop: 4 }}>
+              {proyecto.municipio} · Zona {proyecto.zona} · {proyecto.estado ?? "Sin estado"}
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+            <ProyectoActions
+              proyectoId={id}
+              nombre={proyecto.nombre_corto}
+              canManage={canManage}
+              canDeletePermanent={canDeletePermanent}
+              actions={proyectoActions}
+            />
+            <Link className="btn-link" href="/admin/proyectos">
+              ← Volver
+            </Link>
+          </div>
         </div>
-        <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-          <ProyectoActions
-            proyectoId={id}
-            nombre={proyecto.nombre_corto}
-            canManage={canManage}
-            canDeletePermanent={canDeletePermanent}
-            actions={proyectoActions}
-          />
-          <Link className="btn-link" href="/admin/proyectos">
-            ← Volver
-          </Link>
-        </div>
-      </div>
 
       <div className="kpi-row" style={{ marginBottom: 20 }}>
         <div className="kpi">
@@ -269,6 +323,27 @@ export default async function ProyectoDetailPage({
           </table>
         </div>
       </div>
-    </>
-  );
+      </>
+    );
+  } catch (e) {
+    const message =
+      e instanceof Error
+        ? e.message
+        : "Error inesperado al cargar el proyecto.";
+    return (
+      <main className="wrap">
+        <div className="topbar">
+          <div>
+            <h1>Proyecto</h1>
+          </div>
+          <Link className="btn-link" href="/admin/proyectos">
+            ← Volver
+          </Link>
+        </div>
+        <div className="alert-warn">
+          <strong>No se pudo renderizar el proyecto.</strong> {message}
+        </div>
+      </main>
+    );
+  }
 }
