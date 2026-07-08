@@ -2,19 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { archiveProyecto, deleteProyecto } from "@/app/actions/proyectos";
 import type { ActionResult } from "@/lib/action-result";
-
-type Actions = {
-  archiveProyecto: (formData: FormData) => Promise<ActionResult>;
-  deleteProyecto: (formData: FormData) => Promise<ActionResult>;
-};
 
 type Props = {
   proyectoId: string;
   nombre: string;
   canManage: boolean;
   canDeletePermanent: boolean;
-  actions: Actions;
   redirectAfterDelete?: string;
   compact?: boolean;
 };
@@ -24,7 +19,6 @@ export default function ProyectoActions({
   nombre,
   canManage,
   canDeletePermanent,
-  actions,
   redirectAfterDelete = "/admin/proyectos",
   compact = false,
 }: Props) {
@@ -61,7 +55,7 @@ export default function ProyectoActions({
     if (!ok) return;
     const fd = new FormData();
     fd.set("proyecto_id", proyectoId);
-    void run(actions.archiveProyecto, fd, () => {
+    void run(archiveProyecto, fd, () => {
       if (redirectAfterDelete !== "/admin/proyectos") {
         router.push("/admin/proyectos");
       }
@@ -78,7 +72,7 @@ export default function ProyectoActions({
 
     const fd = new FormData();
     fd.set("proyecto_id", proyectoId);
-    void run(actions.deleteProyecto, fd, () => {
+    void run(deleteProyecto, fd, () => {
       router.push(redirectAfterDelete);
     });
   }

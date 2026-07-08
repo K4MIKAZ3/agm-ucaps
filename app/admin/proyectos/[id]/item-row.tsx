@@ -7,6 +7,7 @@ import {
   anularProyectoItem,
 } from "@/app/actions/proyectos";
 import type { ActionResult } from "@/lib/action-result";
+import { avanceBarColor } from "@/lib/dashboard-utils";
 
 type Unidad = { id: string; codigo: string; nombre: string };
 type Categoria = { id: string; nombre: string; codigo: string };
@@ -35,7 +36,6 @@ type Props = {
   canEditAvance: boolean;
   unidades: Unidad[];
   categorias: Categoria[];
-  avanceBarColor: (pct: number) => string;
 };
 
 const initial: ActionResult = {};
@@ -47,7 +47,6 @@ export default function ItemRow({
   canEditAvance,
   unidades,
   categorias,
-  avanceBarColor,
 }: Props) {
   const [editing, setEditing] = useState(false);
   const [avanceState, avanceAction, avancePending] = useActionState(updateItemAvance, initial);

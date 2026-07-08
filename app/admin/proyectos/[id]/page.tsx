@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient, hasAdminClient } from "@/lib/supabase/admin";
-import { updateProyectoEstado, archiveProyecto, deleteProyecto } from "@/app/actions/proyectos";
+import { updateProyectoEstado } from "@/app/actions/proyectos";
 import { getProfile, canManageProyectos, canEditAvance } from "@/lib/auth";
 import Link from "next/link";
 import ItemAddForm from "./item-add-form";
@@ -9,13 +9,6 @@ import ProyectoActions from "../proyecto-actions";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-
-function avanceBarColor(pct: number) {
-  if (pct >= 80) return "#1baf7a";
-  if (pct >= 50) return "#2a78d6";
-  if (pct > 0) return "#eda100";
-  return "#e0e8f5";
-}
 
 export default async function ProyectoDetailPage({
   params,
@@ -29,7 +22,6 @@ export default async function ProyectoDetailPage({
     const canManage = canManageProyectos(profile?.rol);
     const canEdit = canEditAvance(profile?.rol);
     const canDeletePermanent = canManage;
-    const proyectoActions = { archiveProyecto, deleteProyecto };
 
     const { data: proyecto, error: proyectoError } = await supabase
       .from("v_dashboard_proyectos")
@@ -177,7 +169,6 @@ export default async function ProyectoDetailPage({
               nombre={proyecto.nombre_corto}
               canManage={canManage}
               canDeletePermanent={canDeletePermanent}
-              actions={proyectoActions}
             />
             <Link className="btn-link" href="/admin/proyectos">
               ← Volver
@@ -319,7 +310,6 @@ export default async function ProyectoDetailPage({
                     canEditAvance={canEdit}
                     unidades={unidades ?? []}
                     categorias={categorias ?? []}
-                    avanceBarColor={avanceBarColor}
                   />
                 ))
               )}

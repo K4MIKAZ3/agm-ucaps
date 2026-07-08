@@ -3,6 +3,7 @@ import { createAdminClient, hasAdminClient } from "@/lib/supabase/admin";
 import { createProyecto } from "@/app/actions/proyectos";
 import { getProfile, canManageProyectos } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import UbicacionSelectors from "./ubicacion-selectors";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -13,13 +14,20 @@ export default async function NuevoProyectoPage() {
 
   const supabase = hasAdminClient() ? createAdminClient() : await createClient();
 
-  const [{ data: municipios }, { data: estados }] = await Promise.all([
+  const [{ data: municipios }, { data: estados }, { data: zonas }] = await Promise.all([
     supabase
       .from("municipios")
-      .select("id, nombre, zonas(codigo, nombre)")
+      .select("id, nombre, zona_id")
       .eq("activo", true)
       .order("nombre"),
     supabase.from("estados_proyecto").select("id, nombre, codigo").order("orden"),
+    supabase
+      .from("zonas")
+      .select("id, codigo")
+      .eq("activo", true)
+      .gte("codigo", 1)
+      .lte("codigo", 10)
+      .order("codigo"),
   ]);
 
   async function action(formData: FormData) {
@@ -40,20 +48,7 @@ export default async function NuevoProyectoPage() {
           <label htmlFor="nombre_completo">Nombre completo</label>
           <input id="nombre_completo" name="nombre_completo" />
         </div>
-        <div className="field">
-          <label htmlFor="municipio_id">Municipio *</label>
-          <select id="municipio_id" name="municipio_id" required>
-            <option value="">Seleccionar…</option>
-            {(municipios ?? []).map((m) => {
-              const zona = Array.isArray(m.zonas) ? m.zonas[0] : m.zonas;
-              return (
-                <option key={m.id} value={m.id}>
-                  Zona {zona?.codigo ?? "?"}
-                </option>
-              );
-            })}
-          </select>
-        </div>
+        <UbicacionSelectors municipios={municipios ?? []} zonas={zonas ?? []} />
         <div className="field">
           <label htmlFor="estado_id">Estado</label>
           <select id="estado_id" name="estado_id">
@@ -83,7 +78,7 @@ export default async function NuevoProyectoPage() {
             <input id="facturado" name="facturado" type="number" step="0.01" defaultValue={0} />
           </div>
           <div className="field">
-            <label htmlFor="avance_fisico_pct">Avance físico %</label>
+            <label htmlFor="avance_fisico_pct">Avance físico % (solo si desactivas auto)</label>
             <input id="avance_fisico_pct" name="avance_fisico_pct" type="number" step="0.01" defaultValue={0} />
           </div>
         </div>

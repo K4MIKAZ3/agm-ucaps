@@ -2,7 +2,6 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient, hasAdminClient } from "@/lib/supabase/admin";
 import Link from "next/link";
 import { getProfile, canManageProyectos } from "@/lib/auth";
-import { archiveProyecto, deleteProyecto } from "@/app/actions/proyectos";
 import ProyectoActions from "./proyecto-actions";
 
 export const dynamic = "force-dynamic";
@@ -19,8 +18,6 @@ export default async function AdminProyectosPage() {
     .select("id, zona, municipio, nombre_corto, valor_ucaps, avance_fisico, estado")
     .order("zona")
     .order("municipio");
-
-  const proyectoActions = { archiveProyecto, deleteProyecto };
 
   return (
     <>
@@ -81,7 +78,6 @@ export default async function AdminProyectosPage() {
                           nombre={p.nombre_corto}
                           canManage={canManage}
                           canDeletePermanent={canDeletePermanent}
-                          actions={proyectoActions}
                           compact
                         />
                       </div>

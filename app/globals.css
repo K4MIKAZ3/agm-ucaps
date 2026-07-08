@@ -51,6 +51,7 @@ button {
   border: 1px solid #dde6f7;
   border-radius: 8px;
   padding: 10px 12px;
+  width: 100%;
 }
 
 .btn {
@@ -244,6 +245,12 @@ tbody tr:nth-child(even) {
   border-radius: 8px;
   padding: 10px 12px;
   font: inherit;
+  width: 100%;
+}
+
+.form-wide select,
+.form-wide textarea {
+  margin-bottom: 0;
 }
 
 .grid-2 {

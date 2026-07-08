@@ -121,11 +121,22 @@ function parseItemFields(formData: FormData):
   };
 }
 
+function checkboxOn(formData: FormData, name: string) {
+  return formData.get(name) === "on";
+}
+
 export async function createProyecto(formData: FormData) {
   const supabase = await requireManager();
 
-  const payload = {
-    municipio_id: String(formData.get("municipio_id")),
+  const municipio_id = String(formData.get("municipio_id") || "").trim();
+  if (!municipio_id) {
+    throw new Error("Selecciona un municipio válido de la lista");
+  }
+
+  const avance_calculado_auto = checkboxOn(formData, "avance_calculado_auto");
+
+  const payload: Record<string, unknown> = {
+    municipio_id,
     nombre_corto: String(formData.get("nombre_corto")).trim(),
     nombre_completo: String(formData.get("nombre_completo") || "").trim() || null,
     estado_id: String(formData.get("estado_id") || "") || null,
@@ -133,10 +144,12 @@ export async function createProyecto(formData: FormData) {
     valor_ucaps: Number(formData.get("valor_ucaps") || 0),
     ppto_interno: Number(formData.get("ppto_interno") || 0),
     facturado: Number(formData.get("facturado") || 0),
-    avance_fisico_pct: Number(formData.get("avance_fisico_pct") || 0),
     ppto_interno_aprobado: formData.get("ppto_interno_aprobado") === "on",
     material_aprobado: formData.get("material_aprobado") === "on",
-    avance_calculado_auto: formData.get("avance_calculado_auto") !== "off",
+    avance_calculado_auto,
+    avance_fisico_pct: avance_calculado_auto
+      ? 0
+      : Number(formData.get("avance_fisico_pct") || 0),
   };
 
   const { data, error } = await supabase
@@ -158,7 +171,7 @@ export async function updateProyectoEstado(formData: FormData) {
   const id = String(formData.get("proyecto_id"));
   const estado_id = String(formData.get("estado_id") || "") || null;
   const facturado = Number(formData.get("facturado") || 0);
-  const avance_calculado_auto = formData.get("avance_calculado_auto") !== "off";
+  const avance_calculado_auto = checkboxOn(formData, "avance_calculado_auto");
   const avance_fisico_pct = Number(formData.get("avance_fisico_pct") || 0);
   const estado_operativo = String(formData.get("estado_operativo") || "").trim() || null;
 
