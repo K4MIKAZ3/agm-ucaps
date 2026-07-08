@@ -38,8 +38,6 @@ VALUES ('branding', 'branding', true)
 ON CONFLICT (id) DO UPDATE
 SET public = true;
 
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
-
 DROP POLICY IF EXISTS branding_objects_select ON storage.objects;
 CREATE POLICY branding_objects_select ON storage.objects
   FOR SELECT
