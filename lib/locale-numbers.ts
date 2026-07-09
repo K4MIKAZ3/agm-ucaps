@@ -43,35 +43,38 @@ export function formatColombianNumber(
   });
 }
 
-/** Formatea mientras el usuario escribe (6.000 o 104.601,4). */
+/** Formatea mientras el usuario escribe (1.000.000 o 104.601,4). */
 export function formatColombianInput(raw: string, maxDecimals = 2): string {
   if (!raw) return "";
 
-  const endsWithSep = /[,.]$/.test(raw);
-  const normalized = raw.replace(/\./g, ",");
-  const commaIdx = normalized.indexOf(",");
+  const trimmed = raw.trim();
+  const endsWithComma = trimmed.endsWith(",");
+  const commaIdx = trimmed.indexOf(",");
 
-  let intStr: string;
-  let decStr: string;
+  // Solo la coma es separador decimal; los puntos son miles (se ignoran al extraer dígitos).
+  let digitsInt: string;
+  let digitsDec: string;
 
   if (commaIdx >= 0) {
-    intStr = normalized.slice(0, commaIdx).replace(/\D/g, "");
-    decStr = normalized.slice(commaIdx + 1).replace(/\D/g, "").slice(0, maxDecimals);
+    digitsInt = trimmed.slice(0, commaIdx).replace(/\D/g, "");
+    digitsDec = trimmed.slice(commaIdx + 1).replace(/\D/g, "").slice(0, maxDecimals);
   } else {
-    intStr = normalized.replace(/\D/g, "");
-    decStr = "";
+    digitsInt = trimmed.replace(/\D/g, "");
+    digitsDec = "";
   }
 
-  if (!intStr && !decStr) {
-    return endsWithSep ? "0," : "";
+  if (!digitsInt && !digitsDec && !endsWithComma) {
+    return "";
   }
 
-  const intNum = intStr ? parseInt(intStr, 10) : 0;
+  const intNum = digitsInt ? parseInt(digitsInt, 10) : 0;
   const formattedInt = intNum.toLocaleString("es-CO", { maximumFractionDigits: 0 });
 
-  if (commaIdx >= 0 || endsWithSep) {
-    return decStr ? `${formattedInt},${decStr}` : `${formattedInt},`;
+  if (commaIdx >= 0 || endsWithComma) {
+    if (!digitsInt && !digitsDec && endsWithComma) return "0,";
+    return digitsDec ? `${formattedInt},${digitsDec}` : `${formattedInt},`;
   }
+
   return formattedInt;
 }
 
