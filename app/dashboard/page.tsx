@@ -14,6 +14,7 @@ import {
   groupItemsByProyecto,
   countItemsByProyecto,
 } from "@/lib/dashboard-utils";
+import { resolveDashboardLogoUrl } from "@/lib/branding-logo";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -200,15 +201,14 @@ export default async function DashboardPage() {
     });
 
     const monthlyTrend = buildMonthlyPortfolioTrend(snapshotRows);
+    const dashboardLogo = resolveDashboardLogoUrl(logoUrl);
 
     return (
       <main className="wrap">
         <div className="topbar">
           <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-            {logoUrl && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={logoUrl} alt="AGM" className="brand-logo" />
-            )}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={dashboardLogo} alt="AGM Desarrollos" className="brand-logo" />
             <div>
               <h1>ESTADO DE PROYECTOS AGM</h1>
               <p style={{ color: "#92b4e8", fontSize: 12, marginTop: 4 }}>
