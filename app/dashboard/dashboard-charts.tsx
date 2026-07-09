@@ -177,7 +177,8 @@ export default function DashboardCharts({ estados, proyectos, monthlyTrend = [] 
                 plugins: { legend: { display: false } },
                 scales: {
                   y: {
-                    max: 115,
+                    min: 0,
+                    max: 100,
                     ticks: {
                       callback: (v) => `${v}%`,
                       font: { size: 9 },
