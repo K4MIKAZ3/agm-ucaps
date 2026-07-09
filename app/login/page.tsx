@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { DEFAULT_AGM_LOGO } from "@/lib/branding-logo";
@@ -62,7 +61,8 @@ export default function LoginPage() {
         <div className="login-blueprint-grid" aria-hidden />
         <div>
           <div className="login-brand-row">
-            <Image src={DEFAULT_AGM_LOGO} alt="AGM Desarrollos" width={44} height={44} priority />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={DEFAULT_AGM_LOGO} alt="AGM Desarrollos" width={44} height={44} />
             <div>
               <div className="login-brand-name">AGM DESARROLLOS</div>
               <div className="login-brand-sub">Dashboard UCAPS</div>
