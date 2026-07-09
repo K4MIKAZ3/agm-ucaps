@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { DEFAULT_AGM_LOGO } from "@/lib/branding-logo";
+import { AGM_LOGO } from "@/lib/branding-logo";
 import LoginRigIllustration from "./login-rig";
 
 export default function LoginPage() {
@@ -62,7 +62,7 @@ export default function LoginPage() {
         <div>
           <div className="login-brand-row">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={DEFAULT_AGM_LOGO} alt="AGM Desarrollos" width={44} height={44} />
+            <img src={AGM_LOGO} alt="AGM Desarrollos" width={44} height={44} />
             <div>
               <div className="login-brand-name">AGM DESARROLLOS</div>
               <div className="login-brand-sub">Dashboard UCAPS</div>

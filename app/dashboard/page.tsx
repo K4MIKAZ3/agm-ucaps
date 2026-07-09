@@ -14,7 +14,7 @@ import {
   groupItemsByProyecto,
   countItemsByProyecto,
 } from "@/lib/dashboard-utils";
-import { resolveDashboardLogoUrl } from "@/lib/branding-logo";
+import { AGM_LOGO } from "@/lib/branding-logo";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -72,7 +72,6 @@ export default async function DashboardPage() {
     let proyectosRaw: Array<Record<string, unknown>> | null = null;
     let itemsRaw: Array<Record<string, unknown>> | null = null;
     let snapshotsRaw: Array<Record<string, unknown>> | null = null;
-    let logoUrl: string | null = null;
 
     try {
       const [kpiResult, proyectosResult, itemsResult, snapshotsResult] = await Promise.all([
@@ -116,24 +115,6 @@ export default async function DashboardPage() {
       proyectosRaw = proyectosResult.data;
       itemsRaw = itemsResult.data;
       snapshotsRaw = snapshotsResult.data;
-
-      // Logo del dashboard (opcional)
-      try {
-        const { data: brandingRow } = await supabase
-          .from("branding")
-          .select("logo_object_path")
-          .maybeSingle();
-        const path = brandingRow?.logo_object_path;
-        if (path) {
-          const { data: urlData } = supabase.storage
-            .from("branding")
-            .getPublicUrl(path);
-          logoUrl = urlData.publicUrl;
-        }
-      } catch {
-        // Si no existe aún la migración de branding/logo, no rompas el dashboard.
-        logoUrl = null;
-      }
     } catch (error) {
       loadError =
         error instanceof Error
@@ -201,14 +182,13 @@ export default async function DashboardPage() {
     });
 
     const monthlyTrend = buildMonthlyPortfolioTrend(snapshotRows);
-    const dashboardLogo = resolveDashboardLogoUrl(logoUrl);
 
     return (
       <main className="wrap">
         <div className="topbar">
           <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={dashboardLogo} alt="AGM Desarrollos" className="brand-logo" />
+            <img src={AGM_LOGO} alt="AGM Desarrollos" className="brand-logo" />
             <div>
               <h1>ESTADO DE PROYECTOS AGM</h1>
               <p style={{ color: "#92b4e8", fontSize: 12, marginTop: 4 }}>
