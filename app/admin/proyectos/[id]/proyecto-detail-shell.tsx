@@ -1,8 +1,16 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import LocaleNumberInput from "@/components/locale-number-input";
 import type { ProyectoItemRow, ProyectoSummary } from "@/lib/proyecto-items";
-import { avanceBarColor } from "@/lib/dashboard-utils";
+import { avanceBarColor, copExact } from "@/lib/dashboard-utils";
+import {
+  calcValorEjecutado,
+  calcValorTotal,
+  formatAvancePct,
+  formatColombianNumber,
+  parseColombianNumber,
+} from "@/lib/locale-numbers";
 
 type Unidad = { id: string; codigo: string; nombre: string };
 type Categoria = { id: string; nombre: string; codigo: string };
@@ -13,6 +21,8 @@ type ProyectoConfig = {
   estado_id: string | null;
   avance_calculado_auto: boolean;
   estado_operativo: string | null;
+  duracion_texto: string | null;
+  duracion_meses: number | null;
 };
 
 type Props = {
@@ -40,6 +50,10 @@ const emptyAddForm = {
   cantidad_ejecutada: "0",
   orden: "",
 };
+
+function formatQty(n: number) {
+  return formatColombianNumber(n, { decimals: 4, minDecimals: 0 });
+}
 
 async function readJson<T>(res: Response): Promise<T & ApiError> {
   const data = (await res.json()) as T & ApiError;
@@ -98,10 +112,12 @@ export default function ProyectoDetailShell({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             estado_id: String(fd.get("estado_id") || "") || null,
-            facturado: Number(fd.get("facturado") || 0),
+            facturado: String(fd.get("facturado") || "0"),
             avance_calculado_auto: fd.get("avance_calculado_auto") === "on",
-            avance_fisico_pct: Number(fd.get("avance_fisico_pct") || 0),
+            avance_fisico_pct: String(fd.get("avance_fisico_pct") || "0"),
             estado_operativo: String(fd.get("estado_operativo") || ""),
+            duracion_texto: String(fd.get("duracion_texto") || ""),
+            duracion_meses: String(fd.get("duracion_meses") || ""),
           }),
         })
       );
@@ -130,11 +146,11 @@ export default function ProyectoDetailShell({
             actividad: addForm.actividad,
             unidad_id: addForm.unidad_id,
             categoria_id: addForm.categoria_id || null,
-            numero_item: Number(addForm.numero_item || nextNumero),
-            cantidad_total: Number(addForm.cantidad_total),
-            valor_unitario: Number(addForm.valor_unitario),
-            cantidad_ejecutada: Number(addForm.cantidad_ejecutada),
-            orden: Number(addForm.orden || addForm.numero_item || nextNumero),
+            numero_item: addForm.numero_item || String(nextNumero),
+            cantidad_total: addForm.cantidad_total,
+            valor_unitario: addForm.valor_unitario,
+            cantidad_ejecutada: addForm.cantidad_ejecutada,
+            orden: addForm.orden || addForm.numero_item || String(nextNumero),
           }),
         })
       );
@@ -161,10 +177,10 @@ export default function ProyectoDetailShell({
             actividad: String(fd.get("actividad") || ""),
             unidad_id: String(fd.get("unidad_id") || ""),
             categoria_id: String(fd.get("categoria_id") || "") || null,
-            numero_item: Number(fd.get("numero_item") || 0) || null,
-            cantidad_total: Number(fd.get("cantidad_total") || 0),
-            valor_unitario: Number(fd.get("valor_unitario") || 0),
-            cantidad_ejecutada: Number(fd.get("cantidad_ejecutada") || 0),
+            numero_item: String(fd.get("numero_item") || "") || null,
+            cantidad_total: String(fd.get("cantidad_total") || "0"),
+            valor_unitario: String(fd.get("valor_unitario") || "0"),
+            cantidad_ejecutada: String(fd.get("cantidad_ejecutada") || "0"),
             observaciones: String(fd.get("observaciones") || "") || null,
           }),
         })
@@ -222,6 +238,16 @@ export default function ProyectoDetailShell({
 
   const avanceAuto = config.avance_calculado_auto !== false;
 
+  const addPreview = useMemo(() => {
+    const qty = parseColombianNumber(addForm.cantidad_total);
+    const unit = parseColombianNumber(addForm.valor_unitario);
+    const ejecutada = parseColombianNumber(addForm.cantidad_ejecutada);
+    return {
+      valorTotal: calcValorTotal(qty, unit),
+      valorEjecutado: calcValorEjecutado(ejecutada, unit),
+    };
+  }, [addForm.cantidad_total, addForm.valor_unitario, addForm.cantidad_ejecutada]);
+
   return (
     <>
       <div className="kpi-row" style={{ marginBottom: 20 }}>
@@ -266,23 +292,40 @@ export default function ProyectoDetailShell({
               </select>
             </div>
             <div className="field">
-              <label htmlFor="facturado">Facturado (COP)</label>
+              <label htmlFor="duracion_texto">Duración del proyecto</label>
               <input
+                id="duracion_texto"
+                name="duracion_texto"
+                placeholder="Ej. 3 meses, 2 meses"
+                defaultValue={config.duracion_texto ?? ""}
+                key={`duracion-texto-${config.duracion_texto ?? ""}`}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="duracion_meses">Duración (meses)</label>
+              <LocaleNumberInput
+                id="duracion_meses"
+                name="duracion_meses"
+                decimals={0}
+                defaultValue={config.duracion_meses ?? undefined}
+                key={`duracion-meses-${config.duracion_meses ?? ""}`}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="facturado">Facturado (COP)</label>
+              <LocaleNumberInput
                 id="facturado"
                 name="facturado"
-                type="number"
-                step="0.01"
                 defaultValue={summary.facturado}
                 key={`facturado-${summary.facturado}`}
               />
             </div>
             <div className="field">
               <label htmlFor="avance_fisico_pct">Avance manual %</label>
-              <input
+              <LocaleNumberInput
                 id="avance_fisico_pct"
                 name="avance_fisico_pct"
-                type="number"
-                step="0.01"
+                decimals={2}
                 defaultValue={summary.avance_fisico}
                 disabled={avanceAuto}
                 key={`avance-${summary.avance_fisico}-${avanceAuto}`}
@@ -381,39 +424,46 @@ export default function ProyectoDetailShell({
             </div>
             <div className="field">
               <label htmlFor="cantidad_total">Cantidad total *</label>
-              <input
+              <LocaleNumberInput
                 id="cantidad_total"
-                type="number"
-                step="0.0001"
-                min={0}
+                name="cantidad_total"
+                decimals={4}
                 required
                 value={addForm.cantidad_total}
-                onChange={(e) => setAddForm((f) => ({ ...f, cantidad_total: e.target.value }))}
+                onValueChange={(_, formatted) =>
+                  setAddForm((f) => ({ ...f, cantidad_total: formatted }))
+                }
               />
             </div>
             <div className="field">
               <label htmlFor="valor_unitario">Valor unitario (COP)</label>
-              <input
+              <LocaleNumberInput
                 id="valor_unitario"
-                type="number"
-                step="0.01"
-                min={0}
+                name="valor_unitario"
+                decimals={2}
                 value={addForm.valor_unitario}
-                onChange={(e) => setAddForm((f) => ({ ...f, valor_unitario: e.target.value }))}
+                onValueChange={(_, formatted) =>
+                  setAddForm((f) => ({ ...f, valor_unitario: formatted }))
+                }
               />
             </div>
             <div className="field">
               <label htmlFor="cantidad_ejecutada">Cantidad ejecutada inicial</label>
-              <input
+              <LocaleNumberInput
                 id="cantidad_ejecutada"
-                type="number"
-                step="0.0001"
-                min={0}
+                name="cantidad_ejecutada"
+                decimals={4}
                 value={addForm.cantidad_ejecutada}
-                onChange={(e) => setAddForm((f) => ({ ...f, cantidad_ejecutada: e.target.value }))}
+                onValueChange={(_, formatted) =>
+                  setAddForm((f) => ({ ...f, cantidad_ejecutada: formatted }))
+                }
               />
             </div>
           </div>
+          <p className="form-hint" style={{ marginTop: 8 }}>
+            Vista previa: valor total {copExact(addPreview.valorTotal)} · valor ejecutado{" "}
+            {copExact(addPreview.valorEjecutado)}
+          </p>
           <button className="btn btn-inline" type="submit" disabled={busy === "add"}>
             {busy === "add" ? "Guardando…" : "Añadir ítem"}
           </button>
@@ -435,6 +485,8 @@ export default function ProyectoDetailShell({
                 <th>Ejecutada</th>
                 <th>Progreso</th>
                 <th>Avance</th>
+                <th>Valor unit.</th>
+                <th>Valor total</th>
                 <th>Valor ejec.</th>
                 {canManage && <th>Acciones</th>}
               </tr>
@@ -442,7 +494,7 @@ export default function ProyectoDetailShell({
             <tbody>
               {items.length === 0 ? (
                 <tr>
-                  <td colSpan={canManage ? 8 : 7} style={{ textAlign: "center", padding: 20 }}>
+                  <td colSpan={canManage ? 10 : 9} style={{ textAlign: "center", padding: 20 }}>
                     Sin ítems. {canManage ? "Añade actividades arriba." : ""}
                   </td>
                 </tr>
@@ -457,7 +509,7 @@ export default function ProyectoDetailShell({
                   if (isEditing && canManage) {
                     return (
                       <tr key={it.id} className="item-edit-row">
-                        <td colSpan={8}>
+                        <td colSpan={10}>
                           <form
                             className="item-edit-form"
                             onSubmit={(e) => {
@@ -516,11 +568,9 @@ export default function ProyectoDetailShell({
                               </div>
                               <div className="field">
                                 <label>Cantidad total</label>
-                                <input
+                                <LocaleNumberInput
                                   name="cantidad_total"
-                                  type="number"
-                                  step="0.0001"
-                                  min={0}
+                                  decimals={4}
                                   defaultValue={it.cantidad_total}
                                   className="input-sm"
                                   required
@@ -528,22 +578,18 @@ export default function ProyectoDetailShell({
                               </div>
                               <div className="field">
                                 <label>Valor unitario</label>
-                                <input
+                                <LocaleNumberInput
                                   name="valor_unitario"
-                                  type="number"
-                                  step="0.01"
-                                  min={0}
+                                  decimals={2}
                                   defaultValue={it.valor_unitario}
                                   className="input-sm"
                                 />
                               </div>
                               <div className="field">
                                 <label>Cantidad ejecutada</label>
-                                <input
+                                <LocaleNumberInput
                                   name="cantidad_ejecutada"
-                                  type="number"
-                                  step="0.0001"
-                                  min={0}
+                                  decimals={4}
                                   defaultValue={it.cantidad_ejecutada}
                                   className="input-sm"
                                 />
@@ -584,7 +630,7 @@ export default function ProyectoDetailShell({
                       <td>{it.numero_item}</td>
                       <td>{it.actividad}</td>
                       <td>
-                        {it.cantidad_total} {it.unidad}
+                        {formatQty(it.cantidad_total)} {it.unidad}
                       </td>
                       <td>
                         {canEditAvance ? (
@@ -610,11 +656,11 @@ export default function ProyectoDetailShell({
                           </div>
                         </div>
                       </td>
-                      <td style={{ fontWeight: 700 }}>{av}%</td>
+                      <td style={{ fontWeight: 700 }}>{formatAvancePct(av)}</td>
+                      <td>{copExact(it.valor_unitario)}</td>
+                      <td>{copExact(calcValorTotal(it.cantidad_total, it.valor_unitario))}</td>
                       <td>
-                        <span className="item-avance-val">
-                          ${it.valor_ejecutado.toLocaleString("es-CO")}
-                        </span>
+                        <span className="item-avance-val">{copExact(it.valor_ejecutado)}</span>
                       </td>
                       {canManage && (
                         <td>
@@ -658,25 +704,22 @@ function AvanceInput({
   disabled: boolean;
   onSave: (value: number) => void;
 }) {
-  const [value, setValue] = useState(String(item.cantidad_ejecutada));
+  const [value, setValue] = useState(formatQty(item.cantidad_ejecutada));
 
   return (
     <div className="item-avance-form">
-      <input
-        type="number"
-        step="0.0001"
-        min={0}
-        max={item.cantidad_total}
+      <LocaleNumberInput
+        decimals={4}
         className="input-sm"
         value={value}
         disabled={disabled}
-        onChange={(e) => setValue(e.target.value)}
+        onValueChange={(n, formatted) => setValue(formatted)}
       />
       <button
         type="button"
         className="btn-xs btn-primary"
         disabled={disabled}
-        onClick={() => onSave(Number(value))}
+        onClick={() => onSave(parseColombianNumber(value))}
       >
         {disabled ? "…" : "Guardar"}
       </button>

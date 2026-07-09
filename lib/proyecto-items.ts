@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { parseColombianNumber } from "@/lib/locale-numbers";
 
 export type ProyectoItemRow = {
   id: string;
@@ -72,11 +73,12 @@ export function parseItemInput(body: Record<string, unknown>): { error?: string;
   const actividad_id = body.actividad_id ? String(body.actividad_id) : null;
   const unidad_id = String(body.unidad_id ?? "").trim();
   const categoria_id = body.categoria_id ? String(body.categoria_id) : null;
-  const numero_item = body.numero_item != null ? Number(body.numero_item) : null;
-  const cantidad_total = Number(body.cantidad_total ?? 0);
-  const valor_unitario = Number(body.valor_unitario ?? 0);
-  const cantidad_ejecutada = Number(body.cantidad_ejecutada ?? 0);
-  const orden = Number(body.orden ?? 0);
+  const numero_item =
+    body.numero_item != null ? parseColombianNumber(String(body.numero_item)) : null;
+  const cantidad_total = parseColombianNumber(body.cantidad_total as string | number);
+  const valor_unitario = parseColombianNumber(body.valor_unitario as string | number);
+  const cantidad_ejecutada = parseColombianNumber(body.cantidad_ejecutada as string | number);
+  const orden = parseColombianNumber(body.orden as string | number);
   const observaciones = body.observaciones ? String(body.observaciones).trim() : null;
 
   if (!actividad && !actividad_id) {
@@ -178,8 +180,9 @@ export async function updateItemAvanceRecord(
   db: SupabaseClient,
   proyectoId: string,
   itemId: string,
-  cantidad_ejecutada: number
+  cantidad_ejecutada: number | string
 ) {
+  const ejecutadaInput = parseColombianNumber(cantidad_ejecutada);
   const { data: existing, error: fetchError } = await db
     .from("proyecto_items")
     .select("cantidad_total")
@@ -190,7 +193,7 @@ export async function updateItemAvanceRecord(
   if (fetchError || !existing) return { error: "Ítem no encontrado" };
 
   const ejecutada = Math.min(
-    Math.max(cantidad_ejecutada, 0),
+    Math.max(ejecutadaInput, 0),
     Number(existing.cantidad_total)
   );
 

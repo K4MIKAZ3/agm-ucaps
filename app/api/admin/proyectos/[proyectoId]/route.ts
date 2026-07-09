@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { parseColombianNumber } from "@/lib/locale-numbers";
 import { requireManagerSession } from "@/lib/admin-session";
 import {
   archiveProyectoRecord,
@@ -49,13 +50,22 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
     const avance_calculado_auto = body.avance_calculado_auto === true;
     const payload: Record<string, unknown> = {
       estado_id: body.estado_id ? String(body.estado_id) : null,
-      facturado: Number(body.facturado ?? 0),
+      facturado: parseColombianNumber(body.facturado as string | number),
       avance_calculado_auto,
       estado_operativo: body.estado_operativo ? String(body.estado_operativo).trim() : null,
     };
 
+    if (body.duracion_texto !== undefined) {
+      const texto = String(body.duracion_texto ?? "").trim();
+      payload.duracion_texto = texto || null;
+    }
+    if (body.duracion_meses !== undefined) {
+      const meses = parseColombianNumber(body.duracion_meses as string | number);
+      payload.duracion_meses = meses > 0 ? Math.round(meses) : null;
+    }
+
     if (!avance_calculado_auto) {
-      payload.avance_fisico_pct = Number(body.avance_fisico_pct ?? 0);
+      payload.avance_fisico_pct = parseColombianNumber(body.avance_fisico_pct as string | number);
     }
 
     const { error } = await auth.session.db
@@ -69,7 +79,7 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
 
     const { data: raw } = await auth.session.db
       .from("proyectos")
-      .select("estado_id, avance_calculado_auto, estado_operativo")
+      .select("estado_id, avance_calculado_auto, estado_operativo, duracion_texto, duracion_meses")
       .eq("id", proyectoId)
       .single();
 

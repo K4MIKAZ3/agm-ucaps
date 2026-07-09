@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAvanceEditorSession, requireManagerSession } from "@/lib/admin-session";
+import { parseColombianNumber } from "@/lib/locale-numbers";
 import {
   anularProyectoItemRecord,
   getProyectoSummary,
@@ -27,7 +28,7 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
         auth.session.db,
         proyectoId,
         itemId,
-        Number(body.cantidad_ejecutada ?? 0)
+        parseColombianNumber(body.cantidad_ejecutada ?? 0)
       );
 
       if (result.error) {

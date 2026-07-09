@@ -4,6 +4,7 @@ import { createProyecto } from "@/app/actions/proyectos";
 import { getProfile, canManageProyectos } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import UbicacionSelectors from "./ubicacion-selectors";
+import NuevoProyectoMontosFields from "./nuevo-proyecto-montos-fields";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -64,24 +65,7 @@ export default async function NuevoProyectoPage() {
           <label htmlFor="estado_operativo">Estado operativo (descriptivo)</label>
           <textarea id="estado_operativo" name="estado_operativo" rows={3} />
         </div>
-        <div className="grid-2">
-          <div className="field">
-            <label htmlFor="valor_ucaps">Valor UCAPS</label>
-            <input id="valor_ucaps" name="valor_ucaps" type="number" step="0.01" defaultValue={0} />
-          </div>
-          <div className="field">
-            <label htmlFor="ppto_interno">Ppto interno</label>
-            <input id="ppto_interno" name="ppto_interno" type="number" step="0.01" defaultValue={0} />
-          </div>
-          <div className="field">
-            <label htmlFor="facturado">Facturado</label>
-            <input id="facturado" name="facturado" type="number" step="0.01" defaultValue={0} />
-          </div>
-          <div className="field">
-            <label htmlFor="avance_fisico_pct">Avance físico % (solo si desactivas auto)</label>
-            <input id="avance_fisico_pct" name="avance_fisico_pct" type="number" step="0.01" defaultValue={0} />
-          </div>
-        </div>
+        <NuevoProyectoMontosFields />
         <div className="checks">
           <label>
             <input type="checkbox" name="ppto_interno_aprobado" /> Ppto interno aprobado

@@ -38,7 +38,7 @@ export default async function ProyectoDetailPage({
 
   const { data: proyectoRaw, error: proyectoRawError } = await supabase
     .from("proyectos")
-    .select("estado_id, avance_calculado_auto, estado_operativo")
+    .select("estado_id, avance_calculado_auto, estado_operativo, duracion_texto, duracion_meses")
     .eq("id", id)
     .single();
 
@@ -97,6 +97,9 @@ export default async function ProyectoDetailPage({
           <h1>{proyecto.nombre_corto}</h1>
           <p style={{ color: "#92b4e8", fontSize: 12, marginTop: 4 }}>
             {proyecto.municipio} · Zona {proyecto.zona} · {proyecto.estado ?? "Sin estado"}
+            {proyectoRaw?.duracion_texto && (
+              <> · Duración: {String(proyectoRaw.duracion_texto)}</>
+            )}
           </p>
         </div>
         <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
@@ -126,6 +129,8 @@ export default async function ProyectoDetailPage({
           estado_id: proyectoRaw?.estado_id ?? null,
           avance_calculado_auto: proyectoRaw?.avance_calculado_auto !== false,
           estado_operativo: proyectoRaw?.estado_operativo ?? null,
+          duracion_texto: proyectoRaw?.duracion_texto ?? null,
+          duracion_meses: proyectoRaw?.duracion_meses ?? null,
         }}
         estados={estados ?? []}
         unidades={unidades ?? []}
