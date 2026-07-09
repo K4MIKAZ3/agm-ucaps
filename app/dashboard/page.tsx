@@ -223,6 +223,9 @@ export default async function DashboardPage() {
                 Gestionar proyectos
               </Link>
             )}
+            <Link className="btn-link" href="/dashboard/presentacion">
+              Modo presentación
+            </Link>
             {canManageUsuarios(profile?.rol) && (
               <Link className="btn-link" href="/admin/configuracion/usuarios">
                 Configuración

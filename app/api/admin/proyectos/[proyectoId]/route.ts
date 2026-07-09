@@ -6,6 +6,8 @@ import {
   deleteProyectoRecord,
   getProyectoSummary,
 } from "@/lib/proyecto-items";
+import { restoreProyectoRecord } from "@/lib/proyecto-admin";
+import { safeApiError } from "@/lib/security";
 
 export const runtime = "nodejs";
 
@@ -45,6 +47,14 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
         return NextResponse.json({ error: result.error }, { status: 400 });
       }
       return NextResponse.json({ ok: true, message: "Proyecto archivado" });
+    }
+
+    if (body.action === "restore") {
+      const result = await restoreProyectoRecord(auth.session.db, proyectoId);
+      if (result.error) {
+        return NextResponse.json({ error: result.error }, { status: 400 });
+      }
+      return NextResponse.json({ ok: true, message: "Proyecto restaurado" });
     }
 
     const avance_calculado_auto = body.avance_calculado_auto === true;
@@ -87,7 +97,7 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
     return NextResponse.json({ proyecto, config: raw });
   } catch (e) {
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Error al guardar estado" },
+      { error: safeApiError(e, "Error al guardar estado") },
       { status: 500 }
     );
   }

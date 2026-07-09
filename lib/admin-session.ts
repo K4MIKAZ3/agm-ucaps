@@ -59,3 +59,35 @@ export async function requireAvanceEditorSession(): Promise<SessionResult> {
   }
   return result;
 }
+
+/** Cliente con sesión del usuario (RLS + auth.uid), necesario para RPC como crear_corte_semanal. */
+export async function requireManagerRlsSession(): Promise<SessionResult> {
+  const auth = await createClient();
+  const {
+    data: { user },
+  } = await auth.auth.getUser();
+
+  if (!user) {
+    return { ok: false, status: 401, error: "No autenticado" };
+  }
+
+  const { data: profile } = await auth
+    .from("profiles")
+    .select("rol, activo")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile || profile.activo === false) {
+    return { ok: false, status: 403, error: "Usuario inactivo o sin perfil" };
+  }
+
+  const rol = profile.rol as UserRole;
+  if (!["super_admin", "admin"].includes(rol)) {
+    return { ok: false, status: 403, error: "Sin permiso de administración" };
+  }
+
+  return {
+    ok: true,
+    session: { userId: user.id, rol, db: auth },
+  };
+}

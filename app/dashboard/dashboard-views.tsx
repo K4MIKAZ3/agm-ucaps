@@ -624,6 +624,12 @@ export default function DashboardViews({
       <div className="dash-toolbar">
         <div className="dash-toolbar-actions">
           {view !== "proyecto" && (
+            <Link className="btn btn-toolbar btn-ghost" href="/dashboard/presentacion">
+              Modo presentación
+            </Link>
+          )}
+
+          {view !== "proyecto" && (
             <button
               type="button"
               className="btn btn-toolbar btn-export"

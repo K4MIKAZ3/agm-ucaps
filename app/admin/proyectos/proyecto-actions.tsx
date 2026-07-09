@@ -8,15 +8,14 @@ type Props = {
   nombre: string;
   canManage: boolean;
   canDeletePermanent: boolean;
+  archived?: boolean;
   redirectAfterDelete?: string;
   compact?: boolean;
 };
 
 async function apiJson<T>(res: Response): Promise<T & { error?: string; message?: string }> {
   const data = (await res.json()) as T & { error?: string; message?: string };
-  if (!res.ok) {
-    throw new Error(data.error || `Error ${res.status}`);
-  }
+  if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
   return data;
 }
 
@@ -25,13 +24,14 @@ export default function ProyectoActions({
   nombre,
   canManage,
   canDeletePermanent,
+  archived = false,
   redirectAfterDelete = "/admin/proyectos",
   compact = false,
 }: Props) {
   const router = useRouter();
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const [busy, setBusy] = useState<"archive" | "delete" | null>(null);
+  const [busy, setBusy] = useState<"archive" | "restore" | "delete" | null>(null);
 
   if (!canManage && !canDeletePermanent) return null;
 
@@ -58,6 +58,34 @@ export default function ProyectoActions({
       router.refresh();
     } catch (error) {
       const message = error instanceof Error ? error.message : "No se pudo archivar";
+      setErr(message);
+      alert(message);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function restore() {
+    const ok = confirm(`¿Restaurar "${nombre}"?\n\nVolverá al dashboard y listados activos.`);
+    if (!ok) return;
+
+    setBusy("restore");
+    setMsg(null);
+    setErr(null);
+
+    try {
+      const data = await apiJson<{ ok: boolean; message?: string }>(
+        await fetch(`/api/admin/proyectos/${proyectoId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "restore" }),
+        })
+      );
+      setMsg(data.message ?? "Proyecto restaurado");
+      router.push("/admin/proyectos");
+      router.refresh();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "No se pudo restaurar";
       setErr(message);
       alert(message);
     } finally {
@@ -93,7 +121,7 @@ export default function ProyectoActions({
 
   return (
     <div className={compact ? "item-row-actions" : "proyecto-actions"}>
-      {canManage && (
+      {canManage && !archived && (
         <button
           type="button"
           className="btn-xs btn-ghost"
@@ -101,6 +129,16 @@ export default function ProyectoActions({
           onClick={() => void archive()}
         >
           {busy === "archive" ? "…" : "Archivar"}
+        </button>
+      )}
+      {canManage && archived && (
+        <button
+          type="button"
+          className="btn-xs btn-primary"
+          disabled={busy !== null}
+          onClick={() => void restore()}
+        >
+          {busy === "restore" ? "…" : "Restaurar"}
         </button>
       )}
       {canDeletePermanent && (

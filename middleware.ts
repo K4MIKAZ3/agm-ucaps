@@ -49,6 +49,9 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/login/restablecer");
 
   if (!user && !isPublicAuth) {
+    if (request.nextUrl.pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+    }
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
