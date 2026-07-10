@@ -1,25 +1,6 @@
--- AGM UCAPS · Ubicación manual y fechas de proyecto
+-- Fix: recrear v_dashboard_proyectos si la migración 14 falló al reemplazar la vista.
+-- Ejecutar solo si ya aplicaste los ALTER TABLE de la 14 y falló el CREATE OR REPLACE VIEW.
 
-ALTER TABLE public.proyectos
-  ADD COLUMN IF NOT EXISTS municipio_nombre text,
-  ADD COLUMN IF NOT EXISTS zona_codigo int CHECK (zona_codigo IS NULL OR (zona_codigo >= 1 AND zona_codigo <= 5)),
-  ADD COLUMN IF NOT EXISTS fecha_inicio date;
-
--- municipio_id deja de ser obligatorio (ubicación manual en proyecto)
-ALTER TABLE public.proyectos
-  ALTER COLUMN municipio_id DROP NOT NULL;
-
--- Backfill desde catálogo existente
-UPDATE public.proyectos p
-SET
-  municipio_nombre = COALESCE(p.municipio_nombre, m.nombre),
-  zona_codigo = COALESCE(p.zona_codigo, z.codigo)
-FROM public.municipios m
-JOIN public.zonas z ON z.id = m.zona_id
-WHERE p.municipio_id = m.id
-  AND (p.municipio_nombre IS NULL OR p.zona_codigo IS NULL);
-
--- CREATE OR REPLACE no permite insertar columnas en medio: hay que recrear la vista.
 DROP VIEW IF EXISTS public.v_kpi_dashboard;
 DROP VIEW IF EXISTS public.v_dashboard_proyectos;
 
