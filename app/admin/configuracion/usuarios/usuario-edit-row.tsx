@@ -3,14 +3,9 @@
 import { useActionState } from "react";
 import { updateUsuario } from "@/app/actions/usuarios";
 import type { ActionResult } from "@/lib/action-result";
+import type { UserRole } from "@/lib/roles";
+import { assignableRoles, ROLE_LABELS } from "@/lib/roles";
 import UsuarioActions from "./usuario-actions";
-
-const ROLES = [
-  { value: "viewer", label: "Viewer" },
-  { value: "editor", label: "Editor" },
-  { value: "admin", label: "Admin" },
-  { value: "super_admin", label: "Super admin" },
-];
 
 type Usuario = {
   id: string;
@@ -24,6 +19,8 @@ type Usuario = {
 type Props = {
   usuario: Usuario;
   isSelf: boolean;
+  actorRol: UserRole;
+  canDeleteUsers: boolean;
   extraActions: {
     setUsuarioActivo: (formData: FormData) => Promise<ActionResult>;
     resetUsuarioPassword: (formData: FormData) => Promise<ActionResult>;
@@ -34,8 +31,15 @@ type Props = {
 
 const initial: ActionResult = {};
 
-export default function UsuarioEditRow({ usuario: u, isSelf, extraActions }: Props) {
+export default function UsuarioEditRow({
+  usuario: u,
+  isSelf,
+  actorRol,
+  canDeleteUsers,
+  extraActions,
+}: Props) {
   const [state, action, pending] = useActionState(updateUsuario, initial);
+  const assignable = assignableRoles(actorRol);
 
   return (
     <tr className={!u.activo ? "row-inactive" : undefined}>
@@ -55,18 +59,18 @@ export default function UsuarioEditRow({ usuario: u, isSelf, extraActions }: Pro
             placeholder="—"
           />
           <span className="user-email">{u.email}</span>
-          {isSelf ? (
+          {isSelf || !assignable.includes(u.rol as UserRole) ? (
             <>
               <input type="hidden" name="rol" value={u.rol} />
               <span className="input-sm input-readonly">
-                {ROLES.find((r) => r.value === u.rol)?.label ?? u.rol}
+                {ROLE_LABELS[u.rol as UserRole] ?? u.rol}
               </span>
             </>
           ) : (
             <select name="rol" defaultValue={u.rol} className="input-sm">
-              {ROLES.map((r) => (
-                <option key={r.value} value={r.value}>
-                  {r.label}
+              {assignable.map((r) => (
+                <option key={r} value={r}>
+                  {ROLE_LABELS[r]}
                 </option>
               ))}
             </select>
@@ -83,6 +87,7 @@ export default function UsuarioEditRow({ usuario: u, isSelf, extraActions }: Pro
               email={u.email}
               isSelf={isSelf}
               activo={u.activo}
+              canDeleteUsers={canDeleteUsers}
               actions={extraActions}
             />
           </div>

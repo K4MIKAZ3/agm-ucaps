@@ -1,5 +1,3 @@
-"use client";
-
 import LocaleNumberInput from "@/components/locale-number-input";
 
 export default function NuevoProyectoMontosFields() {
@@ -7,16 +5,12 @@ export default function NuevoProyectoMontosFields() {
     <>
       <div className="grid-2">
         <div className="field">
-          <label htmlFor="duracion_texto">Duración del proyecto</label>
-          <input
-            id="duracion_texto"
-            name="duracion_texto"
-            placeholder="Ej. 3 meses, 6 meses"
-          />
+          <label htmlFor="fecha_inicio">Fecha de inicio</label>
+          <input id="fecha_inicio" name="fecha_inicio" type="date" />
         </div>
         <div className="field">
-          <label htmlFor="duracion_meses">Duración (meses)</label>
-          <LocaleNumberInput id="duracion_meses" name="duracion_meses" decimals={0} />
+          <label htmlFor="fecha_terminacion">Fecha de cierre</label>
+          <input id="fecha_terminacion" name="fecha_terminacion" type="date" />
         </div>
       </div>
       <div className="grid-2">

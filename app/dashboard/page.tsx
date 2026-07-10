@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import LogoutButton from "./logout-button";
 import DashboardShell from "./dashboard-shell";
-import { canManageProyectos, canManageUsuarios } from "@/lib/auth";
+import { canCreateProyecto, canEditProyectoContent, canManageUsuarios, canViewProyectosAdmin } from "@/lib/auth";
 import { combineSupabaseErrors } from "@/lib/supabase/query-error";
 import { safeNumber } from "@/lib/safe-number";
 import { buildMonthlyPortfolioTrend, type SnapshotRow } from "@/lib/dashboard-snapshots";
@@ -198,9 +198,9 @@ export default async function DashboardPage() {
             </div>
           </div>
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-            {canManageProyectos(profile?.rol) && (
+            {canViewProyectosAdmin(profile?.rol) && (
               <Link className="btn-link" href="/admin/proyectos">
-                Gestionar proyectos
+                {canEditProyectoContent(profile?.rol) ? "Gestionar proyectos" : "Ver proyectos"}
               </Link>
             )}
             <Link className="btn-link" href="/dashboard/presentacion">
@@ -238,7 +238,7 @@ export default async function DashboardPage() {
           itemsByProyecto={itemsByProyecto}
           itemCounts={itemCounts}
           monthlyTrend={monthlyTrend}
-          canManage={canManageProyectos(profile?.rol)}
+          canManage={canEditProyectoContent(profile?.rol)}
         />
       </main>
     );

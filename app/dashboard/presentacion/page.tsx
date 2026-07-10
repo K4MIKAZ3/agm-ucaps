@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { canManageProyectos } from "@/lib/auth";
+import { canCreateProyecto } from "@/lib/auth";
 import { listCortesSemanales } from "@/lib/cortes-semanales";
 import PresentationBoard from "./presentation-board";
 
@@ -45,7 +45,7 @@ export default async function PresentacionPage() {
       {!loadError ? (
         <PresentationBoard
           cortes={cortes}
-          canManage={canManageProyectos(profile?.rol)}
+          canManage={canCreateProyecto(profile?.rol)}
         />
       ) : (
         <>

@@ -1,6 +1,23 @@
 import { createClient } from "@/lib/supabase/server";
-
-export type UserRole = "super_admin" | "admin" | "editor" | "viewer";
+export type { UserRole } from "@/lib/roles";
+export {
+  canAccessProyectosAdmin,
+  canArchiveProyecto,
+  canAssignRole,
+  canCreateProyecto,
+  canDeleteProyectoItems,
+  canDeleteProyectoPermanent,
+  canDeleteUsuarios,
+  canEditAvance,
+  canEditProyectoContent,
+  canManageCatalogos,
+  canManageProyectos,
+  canManageUsuarios,
+  canViewProyectosAdmin,
+  isAdmin,
+  isSuperAdmin,
+  assignableRoles,
+} from "@/lib/roles";
 
 export async function getProfile() {
   const supabase = await createClient();
@@ -16,30 +33,6 @@ export async function getProfile() {
     .single();
 
   return { user, profile };
-}
-
-export function canManageProyectos(rol?: string | null) {
-  return rol === "super_admin" || rol === "admin";
-}
-
-export function canEditAvance(rol?: string | null) {
-  return rol === "super_admin" || rol === "admin" || rol === "editor";
-}
-
-export function canAccessProyectosAdmin(rol?: string | null) {
-  return canManageProyectos(rol) || rol === "editor";
-}
-
-export function canManageCatalogos(rol?: string | null) {
-  return rol === "super_admin";
-}
-
-export function canManageUsuarios(rol?: string | null) {
-  return rol === "super_admin";
-}
-
-export function isSuperAdmin(rol?: string | null) {
-  return rol === "super_admin";
 }
 
 export function isProfileActive(profile: { activo?: boolean } | null) {

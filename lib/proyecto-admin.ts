@@ -22,13 +22,13 @@ export type ProyectoHeader = {
   pendiente_facturar: number;
   avance_fisico: number;
   activo: boolean;
-  duracion_texto: string | null;
-  duracion_meses: number | null;
+  fecha_inicio: string | null;
+  fecha_terminacion: string | null;
 };
 
 const PROYECTO_LIST_SELECT = `
   id, nombre_corto, valor_ucaps, avance_fisico_pct, facturado, pendiente_facturar, activo,
-  duracion_texto, duracion_meses,
+  municipio_nombre, zona_codigo, fecha_inicio, fecha_terminacion,
   municipios ( nombre, zonas ( codigo ) ),
   estados_proyecto ( nombre )
 `;
@@ -52,19 +52,28 @@ function mapProyectoRow(row: Record<string, unknown>): {
   const facturado = Number(row.facturado ?? 0);
   const pendiente_facturar = Number(row.pendiente_facturar ?? Math.max(valor_ucaps - facturado, 0));
 
+  const municipio =
+    row.municipio_nombre != null && String(row.municipio_nombre).trim()
+      ? String(row.municipio_nombre)
+      : (m?.nombre ?? "—");
+  const zona =
+    row.zona_codigo != null && Number.isFinite(Number(row.zona_codigo))
+      ? Number(row.zona_codigo)
+      : (z?.codigo ?? "—");
+
   const header: ProyectoHeader = {
     id: String(row.id),
     nombre_corto: String(row.nombre_corto),
-    municipio: m?.nombre ?? "—",
-    zona: z?.codigo ?? "—",
+    municipio,
+    zona,
     estado: e?.nombre ?? null,
     valor_ucaps,
     facturado,
     pendiente_facturar,
     avance_fisico: Number(row.avance_fisico_pct ?? 0),
     activo: row.activo !== false,
-    duracion_texto: row.duracion_texto ? String(row.duracion_texto) : null,
-    duracion_meses: row.duracion_meses != null ? Number(row.duracion_meses) : null,
+    fecha_inicio: row.fecha_inicio ? String(row.fecha_inicio) : null,
+    fecha_terminacion: row.fecha_terminacion ? String(row.fecha_terminacion) : null,
   };
 
   return {

@@ -194,6 +194,17 @@ export function formatCierre(p: Pick<DashboardProyecto, "fecha_terminacion" | "f
   return p.fecha_terminacion_nota || "—";
 }
 
+export function formatProyectoFecha(iso: string | null | undefined) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("es-CO", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
 export function avgAvance(proyectos: DashboardProyecto[]) {
   if (proyectos.length === 0) return 0;
   const sum = proyectos.reduce((s, p) => s + Number(p.avance_fisico ?? 0), 0);

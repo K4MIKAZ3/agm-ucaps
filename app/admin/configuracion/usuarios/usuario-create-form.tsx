@@ -3,18 +3,14 @@
 import { useActionState } from "react";
 import { createUsuario } from "@/app/actions/usuarios";
 import type { ActionResult } from "@/lib/action-result";
-
-const ROLES = [
-  { value: "viewer", label: "Viewer" },
-  { value: "editor", label: "Editor" },
-  { value: "admin", label: "Admin" },
-  { value: "super_admin", label: "Super admin" },
-];
+import type { UserRole } from "@/lib/roles";
+import { assignableRoles, ROLE_LABELS } from "@/lib/roles";
 
 const initial: ActionResult = {};
 
-export default function UsuarioCreateForm() {
+export default function UsuarioCreateForm({ actorRol }: { actorRol: UserRole }) {
   const [state, action, pending] = useActionState(createUsuario, initial);
+  const roles = assignableRoles(actorRol);
 
   return (
     <form className="card form-wide" action={action}>
@@ -48,9 +44,9 @@ export default function UsuarioCreateForm() {
         <div className="field">
           <label htmlFor="rol">Rol *</label>
           <select id="rol" name="rol" defaultValue="viewer" required>
-            {ROLES.map((r) => (
-              <option key={r.value} value={r.value}>
-                {r.label}
+            {roles.map((r) => (
+              <option key={r} value={r}>
+                {ROLE_LABELS[r]}
               </option>
             ))}
           </select>

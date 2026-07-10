@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { getProfile } from "@/lib/auth";
+import { getProfile, canDeleteUsuarios, type UserRole } from "@/lib/auth";
 import { hasAdminClient } from "@/lib/supabase/admin";
 import {
   setUsuarioActivo,
@@ -12,7 +12,9 @@ import UsuarioEditRow from "./usuario-edit-row";
 
 export default async function UsuariosConfigPage() {
   const supabase = await createClient();
-  const { user: me } = await getProfile();
+  const { user: me, profile } = await getProfile();
+  const actorRol = (profile?.rol ?? "viewer") as UserRole;
+  const canDelete = canDeleteUsuarios(actorRol);
 
   const { data: usuarios, error: listError } = await supabase
     .from("profiles")
@@ -48,7 +50,7 @@ export default async function UsuariosConfigPage() {
         <div className="alert-warn">Error al cargar usuarios: {listError.message}</div>
       )}
 
-      <UsuarioCreateForm />
+      <UsuarioCreateForm actorRol={actorRol} />
 
       <div className="table-card" style={{ marginTop: 16 }}>
         <h2 className="section-title">Usuarios ({usuarios?.length ?? 0})</h2>
@@ -70,6 +72,8 @@ export default async function UsuariosConfigPage() {
                   key={u.id}
                   usuario={u}
                   isSelf={u.id === me?.id}
+                  actorRol={actorRol}
+                  canDeleteUsers={canDelete}
                   extraActions={extraActions}
                 />
               ))}

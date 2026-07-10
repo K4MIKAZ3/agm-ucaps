@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireManagerSession } from "@/lib/admin-session";
+import { requireAdminSession, requireEditorSession, requireViewerSession } from "@/lib/admin-session";
 import {
   createProyectoItemRecord,
   getProyectoSummary,
@@ -12,7 +12,7 @@ export const runtime = "nodejs";
 type RouteCtx = { params: Promise<{ proyectoId: string }> };
 
 export async function GET(_req: Request, ctx: RouteCtx) {
-  const auth = await requireManagerSession();
+  const auth = await requireViewerSession();
   if (!auth.ok) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
@@ -31,7 +31,7 @@ export async function GET(_req: Request, ctx: RouteCtx) {
 }
 
 export async function POST(req: Request, ctx: RouteCtx) {
-  const auth = await requireManagerSession();
+  const auth = await requireEditorSession();
   if (!auth.ok) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }

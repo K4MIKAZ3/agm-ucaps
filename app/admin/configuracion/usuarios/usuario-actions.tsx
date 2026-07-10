@@ -15,6 +15,7 @@ type Props = {
   email: string;
   isSelf: boolean;
   activo: boolean;
+  canDeleteUsers: boolean;
   actions: Actions;
 };
 
@@ -23,6 +24,7 @@ export default function UsuarioActions({
   email,
   isSelf,
   activo,
+  canDeleteUsers,
   actions,
 }: Props) {
   const [open, setOpen] = useState(false);
@@ -109,7 +111,7 @@ export default function UsuarioActions({
             </button>
           </form>
 
-          {!isSelf && (
+          {canDeleteUsers && !isSelf && (
             <form
               onSubmit={(e) => {
                 e.preventDefault();

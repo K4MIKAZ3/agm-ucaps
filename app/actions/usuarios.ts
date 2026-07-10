@@ -3,16 +3,15 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient, appOrigin } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
-import type { UserRole } from "@/lib/auth";
+import type { UserRole } from "@/lib/roles";
+import { assignableRoles, canAssignRole, canDeleteUsuarios } from "@/lib/roles";
 import {
   type ActionResult,
   actionError,
   actionSuccess,
 } from "@/lib/action-result";
 
-const ROLES: UserRole[] = ["super_admin", "admin", "editor", "viewer"];
-
-async function requireSuperAdmin() {
+async function requireUserManager() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -25,11 +24,12 @@ async function requireSuperAdmin() {
     .eq("id", user.id)
     .single();
 
-  if (profile?.rol !== "super_admin") {
-    throw new Error("Solo super admin puede gestionar usuarios");
+  const actorRol = profile?.rol as UserRole | undefined;
+  if (!actorRol || !assignableRoles(actorRol).length) {
+    throw new Error("Sin permiso para gestionar usuarios");
   }
 
-  return { supabase, currentUserId: user.id };
+  return { supabase, currentUserId: user.id, actorRol };
 }
 
 function cleanUsername(v: string) {
@@ -42,7 +42,7 @@ export async function createUsuario(
   formData: FormData
 ): Promise<ActionResult> {
   try {
-    const { currentUserId } = await requireSuperAdmin();
+    const { currentUserId, actorRol } = await requireUserManager();
 
     const nombre = String(formData.get("nombre") || "").trim();
     const username = cleanUsername(String(formData.get("username") || ""));
@@ -56,8 +56,8 @@ export async function createUsuario(
     if (password.length < 8) {
       return actionError("La contraseña temporal debe tener al menos 8 caracteres");
     }
-    if (!ROLES.includes(rol)) {
-      return actionError("Rol inválido");
+    if (!canAssignRole(actorRol, rol)) {
+      return actionError("No puedes asignar ese rol");
     }
 
     const admin = createAdminClient();
@@ -105,7 +105,7 @@ export async function updateUsuario(
   formData: FormData
 ): Promise<ActionResult> {
   try {
-    const { supabase, currentUserId } = await requireSuperAdmin();
+    const { supabase, currentUserId, actorRol } = await requireUserManager();
 
     const id = String(formData.get("id"));
     const nombre = String(formData.get("nombre") || "").trim();
@@ -128,7 +128,9 @@ export async function updateUsuario(
       }
     } else {
       rol = String(rolRaw || "viewer") as UserRole;
-      if (!ROLES.includes(rol)) return actionError("Rol inválido");
+      if (!canAssignRole(actorRol, rol)) {
+        return actionError("No puedes asignar ese rol");
+      }
     }
 
     const { error } = await supabase
@@ -156,7 +158,7 @@ export async function updateUsuario(
 
 export async function setUsuarioActivo(formData: FormData): Promise<ActionResult> {
   try {
-    const { supabase, currentUserId } = await requireSuperAdmin();
+    const { supabase, currentUserId } = await requireUserManager();
 
     const id = String(formData.get("id"));
     const activo = formData.get("activo") === "true";
@@ -177,7 +179,7 @@ export async function setUsuarioActivo(formData: FormData): Promise<ActionResult
 
 export async function resetUsuarioPassword(formData: FormData): Promise<ActionResult> {
   try {
-    await requireSuperAdmin();
+    await requireUserManager();
 
     const id = String(formData.get("id"));
     const password = String(formData.get("password") || "");
@@ -201,7 +203,7 @@ export async function sendPasswordRecoveryEmail(
   formData: FormData
 ): Promise<ActionResult> {
   try {
-    await requireSuperAdmin();
+    await requireUserManager();
 
     const email = String(formData.get("email") || "").trim().toLowerCase();
     if (!email) return actionError("Correo requerido");
@@ -220,7 +222,11 @@ export async function sendPasswordRecoveryEmail(
 
 export async function deleteUsuario(formData: FormData): Promise<ActionResult> {
   try {
-    const { currentUserId } = await requireSuperAdmin();
+    const { currentUserId, actorRol } = await requireUserManager();
+
+    if (!canDeleteUsuarios(actorRol)) {
+      return actionError("Solo super admin puede eliminar usuarios");
+    }
 
     const id = String(formData.get("id"));
     if (!id) return actionError("Usuario requerido");

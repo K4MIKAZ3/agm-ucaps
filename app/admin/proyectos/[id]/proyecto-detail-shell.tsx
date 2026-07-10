@@ -21,8 +21,8 @@ type ProyectoConfig = {
   estado_id: string | null;
   avance_calculado_auto: boolean;
   estado_operativo: string | null;
-  duracion_texto: string | null;
-  duracion_meses: number | null;
+  fecha_inicio: string | null;
+  fecha_terminacion: string | null;
 };
 
 type Props = {
@@ -34,7 +34,8 @@ type Props = {
   unidades: Unidad[];
   categorias: Categoria[];
   actividades: Actividad[];
-  canManage: boolean;
+  canEditContent: boolean;
+  canDeleteItems: boolean;
   canEditAvance: boolean;
 };
 
@@ -72,7 +73,8 @@ export default function ProyectoDetailShell({
   unidades,
   categorias,
   actividades,
-  canManage,
+  canEditContent,
+  canDeleteItems,
   canEditAvance,
 }: Props) {
   const [summary, setSummary] = useState(initialSummary);
@@ -99,7 +101,7 @@ export default function ProyectoDetailShell({
 
   async function saveEstado(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!canManage) return;
+    if (!canEditContent) return;
     setBusy("estado");
     setErr(null);
     setMsg(null);
@@ -116,8 +118,8 @@ export default function ProyectoDetailShell({
             avance_calculado_auto: fd.get("avance_calculado_auto") === "on",
             avance_fisico_pct: String(fd.get("avance_fisico_pct") || "0"),
             estado_operativo: String(fd.get("estado_operativo") || ""),
-            duracion_texto: String(fd.get("duracion_texto") || ""),
-            duracion_meses: String(fd.get("duracion_meses") || ""),
+            fecha_inicio: String(fd.get("fecha_inicio") || ""),
+            fecha_terminacion: String(fd.get("fecha_terminacion") || ""),
           }),
         })
       );
@@ -133,7 +135,7 @@ export default function ProyectoDetailShell({
 
   async function addItem(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!canManage) return;
+    if (!canEditContent) return;
     setBusy("add");
     setErr(null);
 
@@ -217,6 +219,7 @@ export default function ProyectoDetailShell({
   }
 
   async function removeItem(itemId: string, label: string) {
+    if (!canDeleteItems) return;
     if (!confirm(`¿Quitar "${label}" del proyecto?`)) return;
     setBusy(`delete-${itemId}`);
     try {
@@ -276,7 +279,7 @@ export default function ProyectoDetailShell({
         </div>
       )}
 
-      {canManage && (
+      {canEditContent && (
         <form className="card form-wide" onSubmit={saveEstado} style={{ marginBottom: 20 }}>
           <h2 className="section-title">Estado y facturación</h2>
           <div className="grid-2">
@@ -292,23 +295,23 @@ export default function ProyectoDetailShell({
               </select>
             </div>
             <div className="field">
-              <label htmlFor="duracion_texto">Duración del proyecto</label>
+              <label htmlFor="fecha_inicio">Fecha de inicio</label>
               <input
-                id="duracion_texto"
-                name="duracion_texto"
-                placeholder="Ej. 3 meses, 2 meses"
-                defaultValue={config.duracion_texto ?? ""}
-                key={`duracion-texto-${config.duracion_texto ?? ""}`}
+                id="fecha_inicio"
+                name="fecha_inicio"
+                type="date"
+                defaultValue={config.fecha_inicio ?? ""}
+                key={`fecha-inicio-${config.fecha_inicio ?? ""}`}
               />
             </div>
             <div className="field">
-              <label htmlFor="duracion_meses">Duración (meses)</label>
-              <LocaleNumberInput
-                id="duracion_meses"
-                name="duracion_meses"
-                decimals={0}
-                defaultValue={config.duracion_meses ?? undefined}
-                key={`duracion-meses-${config.duracion_meses ?? ""}`}
+              <label htmlFor="fecha_terminacion">Fecha de cierre</label>
+              <input
+                id="fecha_terminacion"
+                name="fecha_terminacion"
+                type="date"
+                defaultValue={config.fecha_terminacion ?? ""}
+                key={`fecha-terminacion-${config.fecha_terminacion ?? ""}`}
               />
             </div>
             <div className="field">
@@ -357,7 +360,7 @@ export default function ProyectoDetailShell({
         </form>
       )}
 
-      {canManage && (
+      {canEditContent && (
         <form className="card form-wide item-add-form" onSubmit={addItem}>
           <h2 className="section-title">Añadir ítem al proyecto</h2>
           <p className="form-hint">
@@ -488,14 +491,14 @@ export default function ProyectoDetailShell({
                 <th>Valor unit.</th>
                 <th>Valor total</th>
                 <th>Valor ejec.</th>
-                {canManage && <th>Acciones</th>}
+                {(canEditContent || canDeleteItems) && <th>Acciones</th>}
               </tr>
             </thead>
             <tbody>
               {items.length === 0 ? (
                 <tr>
-                  <td colSpan={canManage ? 10 : 9} style={{ textAlign: "center", padding: 20 }}>
-                    Sin ítems. {canManage ? "Añade actividades arriba." : ""}
+                  <td colSpan={canEditContent || canDeleteItems ? 10 : 9} style={{ textAlign: "center", padding: 20 }}>
+                    Sin ítems. {canEditContent ? "Añade actividades arriba." : ""}
                   </td>
                 </tr>
               ) : (
@@ -506,7 +509,7 @@ export default function ProyectoDetailShell({
                   const isEditing = editingId === it.id;
                   const itemBusy = busy?.includes(it.id) ?? false;
 
-                  if (isEditing && canManage) {
+                  if (isEditing && canEditContent) {
                     return (
                       <tr key={it.id} className="item-edit-row">
                         <td colSpan={10}>
@@ -662,24 +665,28 @@ export default function ProyectoDetailShell({
                       <td>
                         <span className="item-avance-val">{copExact(it.valor_ejecutado)}</span>
                       </td>
-                      {canManage && (
+                      {(canEditContent || canDeleteItems) && (
                         <td>
                           <div className="item-row-actions">
-                            <button
-                              type="button"
-                              className="btn-xs btn-ghost"
-                              onClick={() => setEditingId(it.id)}
-                            >
-                              Editar
-                            </button>
-                            <button
-                              type="button"
-                              className="btn-xs btn-danger"
-                              disabled={itemBusy}
-                              onClick={() => void removeItem(it.id, it.actividad)}
-                            >
-                              {busy === `delete-${it.id}` ? "…" : "Quitar"}
-                            </button>
+                            {canEditContent && (
+                              <button
+                                type="button"
+                                className="btn-xs btn-ghost"
+                                onClick={() => setEditingId(it.id)}
+                              >
+                                Editar
+                              </button>
+                            )}
+                            {canDeleteItems && (
+                              <button
+                                type="button"
+                                className="btn-xs btn-danger"
+                                disabled={itemBusy}
+                                onClick={() => void removeItem(it.id, it.actividad)}
+                              >
+                                {busy === `delete-${it.id}` ? "…" : "Quitar"}
+                              </button>
+                            )}
                           </div>
                         </td>
                       )}

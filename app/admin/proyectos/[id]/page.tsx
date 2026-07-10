@@ -1,9 +1,20 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient, hasAdminClient } from "@/lib/supabase/admin";
-import { getProfile, canManageProyectos, canEditAvance } from "@/lib/auth";
+import {
+  getProfile,
+  canArchiveProyecto,
+  canCreateProyecto,
+  canDeleteProyectoPermanent,
+  canDeleteProyectoItems,
+  canEditAvance,
+  canEditProyectoContent,
+  canViewProyectosAdmin,
+} from "@/lib/auth";
 import { mapItemRow } from "@/lib/proyecto-items";
 import { fetchProyectoHeader } from "@/lib/proyecto-admin";
+import { formatCierre, formatProyectoFecha } from "@/lib/dashboard-utils";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import ProyectoActions from "../proyecto-actions";
 import ProyectoDetailShell from "./proyecto-detail-shell";
 
@@ -16,11 +27,15 @@ export default async function ProyectoDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = hasAdminClient() ? createAdminClient() : await createClient();
   const { profile } = await getProfile();
-  const canManage = canManageProyectos(profile?.rol);
+  if (!canViewProyectosAdmin(profile?.rol)) redirect("/dashboard");
+
+  const supabase = hasAdminClient() ? createAdminClient() : await createClient();
+  const canEditContent = canEditProyectoContent(profile?.rol);
+  const canDeleteItems = canDeleteProyectoItems(profile?.rol);
   const canEdit = canEditAvance(profile?.rol);
-  const canDeletePermanent = canManage;
+  const canArchive = canArchiveProyecto(profile?.rol);
+  const canDeletePermanent = canDeleteProyectoPermanent(profile?.rol);
 
   const proyecto = await fetchProyectoHeader(supabase, id);
 
@@ -36,7 +51,7 @@ export default async function ProyectoDetailPage({
 
   const { data: proyectoRaw, error: proyectoRawError } = await supabase
     .from("proyectos")
-    .select("estado_id, avance_calculado_auto, estado_operativo, duracion_texto, duracion_meses")
+    .select("estado_id, avance_calculado_auto, estado_operativo, fecha_inicio, fecha_terminacion")
     .eq("id", id)
     .single();
 
@@ -95,8 +110,18 @@ export default async function ProyectoDetailPage({
           <h1>{proyecto.nombre_corto}</h1>
           <p style={{ color: "#92b4e8", fontSize: 12, marginTop: 4 }}>
             {proyecto.municipio} · Zona {proyecto.zona} · {proyecto.estado ?? "Sin estado"}
-            {proyectoRaw?.duracion_texto && (
-              <> · Duración: {String(proyectoRaw.duracion_texto)}</>
+            {proyectoRaw?.fecha_inicio && (
+              <> · Inicio: {formatProyectoFecha(proyectoRaw.fecha_inicio)}</>
+            )}
+            {(proyectoRaw?.fecha_terminacion || proyecto.fecha_terminacion) && (
+              <>
+                {" "}
+                · Cierre:{" "}
+                {formatCierre({
+                  fecha_terminacion: proyectoRaw?.fecha_terminacion ?? proyecto.fecha_terminacion,
+                  fecha_terminacion_nota: null,
+                })}
+              </>
             )}
             {isArchived && (
               <span className="badge b-ps" style={{ marginLeft: 8 }}>
@@ -109,7 +134,7 @@ export default async function ProyectoDetailPage({
           <ProyectoActions
             proyectoId={id}
             nombre={proyecto.nombre_corto}
-            canManage={canManage}
+            canArchive={canArchive}
             canDeletePermanent={canDeletePermanent}
             archived={isArchived}
             redirectAfterDelete={
@@ -139,14 +164,15 @@ export default async function ProyectoDetailPage({
           estado_id: proyectoRaw?.estado_id ?? null,
           avance_calculado_auto: proyectoRaw?.avance_calculado_auto !== false,
           estado_operativo: proyectoRaw?.estado_operativo ?? null,
-          duracion_texto: proyectoRaw?.duracion_texto ?? null,
-          duracion_meses: proyectoRaw?.duracion_meses ?? null,
+          fecha_inicio: proyectoRaw?.fecha_inicio ?? null,
+          fecha_terminacion: proyectoRaw?.fecha_terminacion ?? null,
         }}
         estados={estados ?? []}
         unidades={unidades ?? []}
         categorias={categorias ?? []}
         actividades={actividades ?? []}
-        canManage={canManage}
+        canEditContent={canEditContent}
+        canDeleteItems={canDeleteItems}
         canEditAvance={canEdit}
       />
     </>

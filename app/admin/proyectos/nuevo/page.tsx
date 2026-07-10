@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient, hasAdminClient } from "@/lib/supabase/admin";
 import { createProyecto } from "@/app/actions/proyectos";
-import { getProfile, canManageProyectos } from "@/lib/auth";
+import { getProfile, canCreateProyecto } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import UbicacionSelectors from "./ubicacion-selectors";
 import NuevoProyectoMontosFields from "./nuevo-proyecto-montos-fields";
@@ -11,25 +11,14 @@ export const runtime = "nodejs";
 
 export default async function NuevoProyectoPage() {
   const { profile } = await getProfile();
-  if (!canManageProyectos(profile?.rol)) redirect("/admin/proyectos");
+  if (!canCreateProyecto(profile?.rol)) redirect("/admin/proyectos");
 
   const supabase = hasAdminClient() ? createAdminClient() : await createClient();
 
-  const [{ data: municipios }, { data: estados }, { data: zonas }] = await Promise.all([
-    supabase
-      .from("municipios")
-      .select("id, nombre, zona_id")
-      .eq("activo", true)
-      .order("nombre"),
-    supabase.from("estados_proyecto").select("id, nombre, codigo").order("orden"),
-    supabase
-      .from("zonas")
-      .select("id, codigo")
-      .eq("activo", true)
-      .gte("codigo", 1)
-      .lte("codigo", 10)
-      .order("codigo"),
-  ]);
+  const { data: estados } = await supabase
+    .from("estados_proyecto")
+    .select("id, nombre, codigo")
+    .order("orden");
 
   async function action(formData: FormData) {
     "use server";
@@ -49,7 +38,7 @@ export default async function NuevoProyectoPage() {
           <label htmlFor="nombre_completo">Nombre completo</label>
           <input id="nombre_completo" name="nombre_completo" />
         </div>
-        <UbicacionSelectors municipios={municipios ?? []} zonas={zonas ?? []} />
+        <UbicacionSelectors />
         <div className="field">
           <label htmlFor="estado_id">Estado</label>
           <select id="estado_id" name="estado_id">

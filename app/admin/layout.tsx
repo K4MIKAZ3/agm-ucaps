@@ -1,4 +1,9 @@
-import { getProfile, canAccessProyectosAdmin, canManageProyectos, canManageUsuarios } from "@/lib/auth";
+import {
+  getProfile,
+  canAccessProyectosAdmin,
+  canCreateProyecto,
+  canManageUsuarios,
+} from "@/lib/auth";
 import { AGM_LOGO } from "@/lib/branding-logo";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -15,7 +20,7 @@ export default async function AdminLayout({
   if (!user) redirect("/login");
   if (!canAccessProyectosAdmin(profile?.rol)) redirect("/dashboard");
 
-  const canManageProy = canManageProyectos(profile?.rol);
+  const canCreate = canCreateProyecto(profile?.rol);
   const canManageUs = canManageUsuarios(profile?.rol);
 
   return (
@@ -36,7 +41,7 @@ export default async function AdminLayout({
       <nav className="admin-nav">
         <Link href="/dashboard">Dashboard</Link>
         <Link href="/admin/proyectos">Proyectos</Link>
-        {canManageProy && <Link href="/admin/proyectos/nuevo">+ Nuevo proyecto</Link>}
+        {canCreate && <Link href="/admin/proyectos/nuevo">+ Nuevo proyecto</Link>}
         {canManageUs && <Link href="/admin/configuracion/usuarios">Configuración</Link>}
       </nav>
       {children}

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 type Props = {
   proyectoId: string;
   nombre: string;
-  canManage: boolean;
+  canArchive: boolean;
   canDeletePermanent: boolean;
   archived?: boolean;
   redirectAfterDelete?: string;
@@ -22,7 +22,7 @@ async function apiJson<T>(res: Response): Promise<T & { error?: string; message?
 export default function ProyectoActions({
   proyectoId,
   nombre,
-  canManage,
+  canArchive,
   canDeletePermanent,
   archived = false,
   redirectAfterDelete = "/admin/proyectos",
@@ -33,7 +33,7 @@ export default function ProyectoActions({
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState<"archive" | "restore" | "delete" | null>(null);
 
-  if (!canManage && !canDeletePermanent) return null;
+  if (!canArchive && !canDeletePermanent) return null;
 
   async function archive() {
     const ok = confirm(
@@ -121,7 +121,7 @@ export default function ProyectoActions({
 
   return (
     <div className={compact ? "item-row-actions" : "proyecto-actions"}>
-      {canManage && !archived && (
+      {canArchive && !archived && (
         <button
           type="button"
           className="btn-xs btn-ghost"
@@ -131,7 +131,7 @@ export default function ProyectoActions({
           {busy === "archive" ? "…" : "Archivar"}
         </button>
       )}
-      {canManage && archived && (
+      {canArchive && archived && (
         <button
           type="button"
           className="btn-xs btn-primary"

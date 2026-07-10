@@ -1,7 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient, hasAdminClient } from "@/lib/supabase/admin";
 import Link from "next/link";
-import { getProfile, canManageProyectos } from "@/lib/auth";
+import {
+  getProfile,
+  canArchiveProyecto,
+  canCreateProyecto,
+  canDeleteProyectoPermanent,
+} from "@/lib/auth";
 import { listProyectosAdmin } from "@/lib/proyecto-admin";
 import ProyectoActions from "./proyecto-actions";
 
@@ -18,8 +23,9 @@ export default async function AdminProyectosPage({
 
   const supabase = hasAdminClient() ? createAdminClient() : await createClient();
   const { profile } = await getProfile();
-  const canManage = canManageProyectos(profile?.rol);
-  const canDeletePermanent = canManage;
+  const canCreate = canCreateProyecto(profile?.rol);
+  const canArchive = canArchiveProyecto(profile?.rol);
+  const canDeletePermanent = canDeleteProyectoPermanent(profile?.rol);
 
   const proyectos = await listProyectosAdmin(supabase, showArchived);
 
@@ -31,7 +37,7 @@ export default async function AdminProyectosPage({
           <p style={{ color: "#92b4e8", fontSize: 12, marginTop: 4 }}>
             {showArchived
               ? "Proyectos ocultos del dashboard. Restáuralos o elimínalos."
-              : "Crear, editar, archivar y eliminar proyectos UCAPS"}
+              : "Consulta, edita y alimenta proyectos UCAPS según tu rol"}
           </p>
         </div>
         <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
@@ -44,7 +50,7 @@ export default async function AdminProyectosPage({
               Ver archivados
             </Link>
           )}
-          {canManage && !showArchived && (
+          {canCreate && !showArchived && (
             <Link className="btn-link" href="/admin/proyectos/nuevo">
               + Nuevo proyecto
             </Link>
@@ -75,7 +81,7 @@ export default async function AdminProyectosPage({
                     ) : (
                       <>
                         No hay proyectos activos.{" "}
-                        {canManage && (
+                        {canCreate && (
                           <Link href="/admin/proyectos/nuevo">Crear el primero</Link>
                         )}
                       </>
@@ -99,7 +105,7 @@ export default async function AdminProyectosPage({
                         <ProyectoActions
                           proyectoId={p.id}
                           nombre={p.nombre_corto}
-                          canManage={canManage}
+                          canArchive={canArchive}
                           canDeletePermanent={canDeletePermanent}
                           archived={showArchived}
                           redirectAfterDelete={

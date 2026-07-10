@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { requireAvanceEditorSession, requireManagerSession } from "@/lib/admin-session";
+import {
+  requireAvanceEditorSession,
+  requireDeleteItemSession,
+  requireEditorSession,
+} from "@/lib/admin-session";
 import { parseColombianNumber } from "@/lib/locale-numbers";
 import {
   anularProyectoItemRecord,
@@ -39,7 +43,7 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
       return NextResponse.json({ item: result.item, proyecto });
     }
 
-    const auth = await requireManagerSession();
+    const auth = await requireEditorSession();
     if (!auth.ok) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
@@ -60,7 +64,7 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
 }
 
 export async function DELETE(_req: Request, ctx: RouteCtx) {
-  const auth = await requireManagerSession();
+  const auth = await requireDeleteItemSession();
   if (!auth.ok) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
