@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { fetchSnapshotSemanal, summarizeSnapshot } from "@/lib/cortes-semanales";
+import { requireAdminSession } from "@/lib/admin-session";
+import {
+  deleteCorteSemanal,
+  fetchSnapshotSemanal,
+  summarizeSnapshot,
+} from "@/lib/cortes-semanales";
 import { isUuid, safeApiError } from "@/lib/security";
 
 export const runtime = "nodejs";
@@ -39,6 +44,32 @@ export async function GET(_req: Request, ctx: RouteCtx) {
   } catch (e) {
     return NextResponse.json(
       { error: safeApiError(e, "Error al cargar corte") },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(_req: Request, ctx: RouteCtx) {
+  const auth = await requireAdminSession();
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
+  try {
+    const { corteId } = await ctx.params;
+    if (!isUuid(corteId)) {
+      return NextResponse.json({ error: "ID de corte inválido" }, { status: 400 });
+    }
+
+    const result = await deleteCorteSemanal(auth.session.db, corteId);
+    if (result.error) {
+      return NextResponse.json({ error: result.error }, { status: 400 });
+    }
+
+    return NextResponse.json({ ok: true, message: "Corte eliminado" });
+  } catch (e) {
+    return NextResponse.json(
+      { error: safeApiError(e, "Error al eliminar corte") },
       { status: 500 }
     );
   }

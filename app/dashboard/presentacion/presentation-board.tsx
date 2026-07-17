@@ -45,8 +45,8 @@ type WidgetId =
 
 const WIDGETS: { id: WidgetId; title: string }[] = [
   { id: "kpi-compare", title: "KPIs — comparación de cortes" },
-  { id: "delta-table", title: "Avance por proyecto (Δ semana)" },
-  { id: "trend-weekly", title: "Tendencia semanal del portafolio" },
+  { id: "delta-table", title: "Avance por proyecto (Δ corte)" },
+  { id: "trend-weekly", title: "Tendencia de cortes del portafolio" },
   { id: "estados-actual", title: "Distribución por estado (corte actual)" },
   { id: "avance-top", title: "Top avance — corte actual" },
 ];
@@ -68,6 +68,12 @@ type Props = {
   canManage: boolean;
 };
 
+function todayIsoDate() {
+  const d = new Date();
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 10);
+}
+
 function deltaClass(n: number) {
   if (n > 0) return "delta-pos";
   if (n < 0) return "delta-neg";
@@ -76,14 +82,16 @@ function deltaClass(n: number) {
 
 export default function PresentationBoard({ cortes, canManage }: Props) {
   const defaults = pickDefaultCortes(cortes);
+  const [cortesList, setCortesList] = useState(cortes);
   const [presentacionId, setPresentacionId] = useState(defaults.presentacionId ?? "");
   const [comparacionId, setComparacionId] = useState(defaults.comparacionId ?? "");
+  const [fechaCorte, setFechaCorte] = useState(todayIsoDate);
   const [widgetOrder, setWidgetOrder] = useState<WidgetId[]>(DEFAULT_ORDER);
   const [dragId, setDragId] = useState<WidgetId | null>(null);
   const [data, setData] = useState<CompareData | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [busyCorte, setBusyCorte] = useState(false);
+  const [busyCorte, setBusyCorte] = useState<string | null>(null);
   const [fullscreen, setFullscreen] = useState(false);
 
   useEffect(() => {
@@ -129,22 +137,80 @@ export default function PresentationBoard({ cortes, canManage }: Props) {
     void loadCompare();
   }, [loadCompare]);
 
+  async function refreshCortes(preferredId?: string) {
+    const res = await fetch("/api/cortes-semanales");
+    const json = (await res.json()) as { cortes?: CorteSemanal[]; error?: string };
+    if (!res.ok) throw new Error(json.error || "No se pudieron cargar los cortes");
+
+    const next = json.cortes ?? [];
+    setCortesList(next);
+
+    if (preferredId) {
+      setPresentacionId(preferredId);
+      setComparacionId(next.find((c) => c.id !== preferredId)?.id ?? "");
+    }
+  }
+
   async function crearCorte() {
-    if (!confirm("¿Guardar corte del viernes de esta semana con el avance actual?")) return;
-    setBusyCorte(true);
+    if (!fechaCorte) {
+      setErr("Selecciona una fecha para el corte.");
+      return;
+    }
+    const ok = confirm(
+      `¿Guardar corte con fecha ${fechaCorte} usando el avance actual?\n\nSi ya existe un corte en esa fecha, se actualizará.`
+    );
+    if (!ok) return;
+
+    setBusyCorte("create");
+    setErr(null);
     try {
       const res = await fetch("/api/admin/cortes-semanales", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ fecha: fechaCorte }),
       });
       const json = (await res.json()) as { id?: string; error?: string };
       if (!res.ok) throw new Error(json.error || "No se pudo crear el corte");
-      window.location.reload();
+      await refreshCortes(json.id);
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Error al crear corte");
+      const message = e instanceof Error ? e.message : "Error al crear corte";
+      setErr(message);
+      alert(message);
     } finally {
-      setBusyCorte(false);
+      setBusyCorte(null);
+    }
+  }
+
+  async function eliminarCorte(corte: CorteSemanal) {
+    if (!canManage) return;
+    const ok = confirm(
+      `¿Eliminar "${corte.nombre}"?\n\nSe borrará el corte guardado y sus datos snapshot. Esta acción no se puede deshacer.`
+    );
+    if (!ok) return;
+
+    setBusyCorte(`delete-${corte.id}`);
+    setErr(null);
+    try {
+      const res = await fetch(`/api/cortes-semanales/${corte.id}`, { method: "DELETE" });
+      const json = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(json.error || "No se pudo eliminar el corte");
+
+      const next = cortesList.filter((c) => c.id !== corte.id);
+      setCortesList(next);
+
+      if (presentacionId === corte.id) {
+        const nextPresentacion = next[0]?.id ?? "";
+        setPresentacionId(nextPresentacion);
+        setComparacionId(next.find((c) => c.id !== nextPresentacion)?.id ?? "");
+      } else if (comparacionId === corte.id) {
+        setComparacionId(next.find((c) => c.id !== presentacionId)?.id ?? "");
+      }
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Error al eliminar corte";
+      setErr(message);
+      alert(message);
+    } finally {
+      setBusyCorte(null);
     }
   }
 
@@ -191,7 +257,7 @@ export default function PresentationBoard({ cortes, canManage }: Props) {
         if (!data) {
           return (
             <p className="form-hint">
-              Necesitas al menos dos cortes semanales. {canManage && "Usa «Generar corte viernes»."}
+              Necesitas al menos dos cortes guardados. {canManage && "Usa «Guardar corte»."}
             </p>
           );
         }
@@ -206,7 +272,7 @@ export default function PresentationBoard({ cortes, canManage }: Props) {
               </div>
             </div>
             <div className="pres-kpi">
-              <div className="pres-kpi-lbl">Avance prom. (viernes anterior)</div>
+              <div className="pres-kpi-lbl">Avance prom. (corte comparado)</div>
               <div className="pres-kpi-val">{data.anterior.avgAvance}%</div>
             </div>
             <div className="pres-kpi">
@@ -341,7 +407,7 @@ export default function PresentationBoard({ cortes, canManage }: Props) {
     }
   }
 
-  const corteLabel = (id: string) => cortes.find((c) => c.id === id)?.nombre ?? "—";
+  const corteLabel = (id: string) => cortesList.find((c) => c.id === id)?.nombre ?? "—";
 
   return (
     <div className={fullscreen ? "presentation-fullscreen" : undefined}>
@@ -349,7 +415,7 @@ export default function PresentationBoard({ cortes, canManage }: Props) {
         <div>
           <h1>Modo presentación</h1>
           <p style={{ color: "#92b4e8", fontSize: 12, marginTop: 4 }}>
-            Compara el corte del viernes que presentas vs. el viernes anterior. Arrastra los
+            Compara cortes guardados y conserva el historial para consultas futuras. Arrastra los
             paneles para ordenarlos.
           </p>
         </div>
@@ -370,14 +436,14 @@ export default function PresentationBoard({ cortes, canManage }: Props) {
       <div className="card form-wide presentation-controls">
         <div className="grid-2">
           <div className="field">
-            <label htmlFor="corte-presentacion">Corte que presentas (viernes)</label>
+            <label htmlFor="corte-presentacion">Corte que presentas</label>
             <select
               id="corte-presentacion"
               value={presentacionId}
               onChange={(e) => setPresentacionId(e.target.value)}
             >
               <option value="">Seleccionar…</option>
-              {cortes.map((c) => (
+              {cortesList.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.nombre} ({c.proyecto_count ?? 0} proy.)
                 </option>
@@ -385,14 +451,14 @@ export default function PresentationBoard({ cortes, canManage }: Props) {
             </select>
           </div>
           <div className="field">
-            <label htmlFor="corte-comparacion">Comparar con (viernes anterior)</label>
+            <label htmlFor="corte-comparacion">Comparar con</label>
             <select
               id="corte-comparacion"
               value={comparacionId}
               onChange={(e) => setComparacionId(e.target.value)}
             >
               <option value="">Seleccionar…</option>
-              {cortes.map((c) => (
+              {cortesList.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.nombre}
                 </option>
@@ -400,16 +466,27 @@ export default function PresentationBoard({ cortes, canManage }: Props) {
             </select>
           </div>
         </div>
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "end" }}>
           {canManage && (
-            <button
-              type="button"
-              className="btn btn-inline"
-              disabled={busyCorte}
-              onClick={() => void crearCorte()}
-            >
-              {busyCorte ? "Guardando…" : "Generar corte viernes (hoy)"}
-            </button>
+            <>
+              <div className="field" style={{ marginBottom: 0 }}>
+                <label htmlFor="fecha-corte">Fecha del corte</label>
+                <input
+                  id="fecha-corte"
+                  type="date"
+                  value={fechaCorte}
+                  onChange={(e) => setFechaCorte(e.target.value)}
+                />
+              </div>
+              <button
+                type="button"
+                className="btn btn-inline"
+                disabled={busyCorte !== null || !fechaCorte}
+                onClick={() => void crearCorte()}
+              >
+                {busyCorte === "create" ? "Guardando…" : "Guardar corte"}
+              </button>
+            </>
           )}
           {presentacionId && comparacionId && (
             <span className="form-hint" style={{ margin: 0 }}>
@@ -418,14 +495,51 @@ export default function PresentationBoard({ cortes, canManage }: Props) {
             </span>
           )}
         </div>
+
+        {canManage && cortesList.length > 0 && (
+          <div style={{ marginTop: 16 }}>
+            <h2 className="section-title">Cortes guardados</h2>
+            <div className="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Corte</th>
+                    <th>Proyectos</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {cortesList.map((c) => (
+                    <tr key={c.id}>
+                      <td>{c.fecha_corte}</td>
+                      <td style={{ fontWeight: 600 }}>{c.nombre}</td>
+                      <td>{c.proyecto_count ?? 0}</td>
+                      <td>
+                        <button
+                          type="button"
+                          className="btn-xs btn-danger"
+                          disabled={busyCorte !== null}
+                          onClick={() => void eliminarCorte(c)}
+                        >
+                          {busyCorte === `delete-${c.id}` ? "…" : "Eliminar"}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
 
-      {cortes.length < 2 && (
+      {cortesList.length < 2 && (
         <div className="alert-warn" style={{ marginBottom: 16 }}>
-          Necesitas al menos <strong>dos cortes de viernes</strong> para comparar semanas.
+          Necesitas al menos <strong>dos cortes guardados</strong> para comparar.
           {canManage
-            ? " Genera el corte de esta semana y el de la semana pasada."
-            : " Pide al administrador que genere los cortes cada viernes."}
+            ? " Selecciona fechas en el calendario y guarda los cortes necesarios."
+            : " Pide al administrador que genere los cortes necesarios."}
         </div>
       )}
 

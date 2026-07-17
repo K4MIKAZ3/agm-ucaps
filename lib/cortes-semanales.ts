@@ -207,7 +207,7 @@ export async function buildWeeklyTrend(
     const summary = summarizeSnapshot(rows);
     points.push({
       corteId: corte.id,
-      label: corte.nombre.replace(/^Corte viernes /i, ""),
+      label: corte.nombre.replace(/^Corte( viernes)? /i, ""),
       fecha_corte: corte.fecha_corte,
       avgAvance: summary.avgAvance,
       totalFacturado: summary.totalFacturado,
@@ -222,11 +222,24 @@ export async function crearCorteSemanal(
   fecha?: string
 ): Promise<string> {
   const { data, error } = await db.rpc("crear_corte_semanal", {
-    p_fecha: fecha ?? formatCorteDate(fridayOfWeek()),
+    p_fecha: fecha ?? formatCorteDate(new Date()),
   });
 
   if (error) throw new Error(error.message);
   return String(data);
+}
+
+export async function deleteCorteSemanal(db: SupabaseClient, corteId: string) {
+  const { data, error } = await db
+    .from("cortes_semanales")
+    .delete()
+    .eq("id", corteId)
+    .select("id")
+    .single();
+
+  if (error) return { error: error.message };
+  if (!data) return { error: "No se pudo eliminar el corte." };
+  return { ok: true as const };
 }
 
 export function pickDefaultCortes(cortes: CorteSemanal[]): {

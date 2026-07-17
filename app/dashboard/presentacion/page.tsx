@@ -31,14 +31,14 @@ export default async function PresentacionPage() {
     loadError =
       e instanceof Error
         ? e.message
-        : "No se pudieron cargar los cortes. Aplica la migración 13_cortes_semanales.sql en Supabase.";
+        : "No se pudieron cargar los cortes. Aplica las migraciones de cortes en Supabase.";
   }
 
   return (
     <main className={`wrap${cortes.length ? " presentation-page" : ""}`}>
       {loadError && (
         <div className="alert-warn" style={{ marginBottom: 16 }}>
-          <strong>Cortes semanales no disponibles:</strong> {loadError}
+          <strong>Cortes no disponibles:</strong> {loadError}
         </div>
       )}
 
@@ -58,7 +58,7 @@ export default async function PresentacionPage() {
             </Link>
           </div>
           <p className="form-hint">
-            Ejecuta en Supabase: <code>supabase/migrations/13_cortes_semanales.sql</code>
+            Ejecuta en Supabase las migraciones pendientes de <code>supabase/migrations</code>.
           </p>
         </>
       )}
