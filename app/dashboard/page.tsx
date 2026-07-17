@@ -79,10 +79,9 @@ export default async function DashboardPage() {
         supabase
           .from("v_dashboard_proyectos")
           .select(
-            "id, zona, zona_nombre, zona_color, municipio, municipio_id, nombre_corto, valor_ucaps, avance_fisico, facturado, pendiente_facturar, estado, estado_codigo, estado_color, fecha_terminacion, fecha_terminacion_nota, estado_operativo, updated_at"
+            "id, zona, zona_nombre, zona_color, municipio, municipio_id, nombre_corto, nombre_completo, valor_ucaps, avance_fisico, facturado, pendiente_facturar, estado, estado_codigo, estado_color, fecha_terminacion, fecha_terminacion_nota, estado_operativo, updated_at"
           )
           .order("zona")
-          .order("municipio")
           .order("nombre_corto"),
         supabase
           .from("v_proyecto_items_detalle")
@@ -130,7 +129,7 @@ export default async function DashboardPage() {
       zona_color: r.zona_color as string | null,
       municipio: String(r.municipio ?? "—"),
       municipio_id: String(r.municipio_id ?? ""),
-      nombre_corto: String(r.nombre_corto ?? "—"),
+      nombre_corto: String(r.nombre_completo || r.nombre_corto || "—"),
       valor_ucaps: safeNumber(r.valor_ucaps),
       avance_fisico: safeNumber(r.avance_fisico),
       facturado: safeNumber(r.facturado),

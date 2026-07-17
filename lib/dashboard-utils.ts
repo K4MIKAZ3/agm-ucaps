@@ -100,7 +100,6 @@ export function filterProyectosBySearch(
   return proyectos.filter(
     (p) =>
       p.nombre_corto.toLowerCase().includes(q) ||
-      p.municipio.toLowerCase().includes(q) ||
       p.zona_nombre.toLowerCase().includes(q) ||
       String(p.zona).includes(q) ||
       (p.estado?.toLowerCase().includes(q) ?? false)
@@ -220,13 +219,6 @@ export type ZonaGroup = {
   zona_nombre: string;
   zona_color: string | null;
   proyectos: DashboardProyecto[];
-  municipios: MunicipioGroup[];
-};
-
-export type MunicipioGroup = {
-  municipio: string;
-  municipio_id: string;
-  proyectos: DashboardProyecto[];
 };
 
 export function groupByUbicacion(proyectos: DashboardProyecto[]): ZonaGroup[] {
@@ -240,26 +232,13 @@ export function groupByUbicacion(proyectos: DashboardProyecto[]): ZonaGroup[] {
         zona_nombre: p.zona_nombre,
         zona_color: p.zona_color,
         proyectos: [],
-        municipios: [],
       };
       zonaMap.set(p.zona, zona);
     }
     zona.proyectos.push(p);
-
-    let muni = zona.municipios.find((m) => m.municipio_id === p.municipio_id);
-    if (!muni) {
-      muni = { municipio: p.municipio, municipio_id: p.municipio_id, proyectos: [] };
-      zona.municipios.push(muni);
-    }
-    muni.proyectos.push(p);
   }
 
-  return [...zonaMap.values()]
-    .sort((a, b) => a.zona - b.zona)
-    .map((z) => ({
-      ...z,
-      municipios: z.municipios.sort((a, b) => a.municipio.localeCompare(b.municipio, "es")),
-    }));
+  return [...zonaMap.values()].sort((a, b) => a.zona - b.zona);
 }
 
 export function groupItemsByProyecto(items: DashboardItem[]): Record<string, DashboardItem[]> {

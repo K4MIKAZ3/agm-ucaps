@@ -35,7 +35,7 @@ export async function exportProyectoPdf(
   y = 36;
   doc.setTextColor(13, 47, 110);
   doc.setFontSize(11);
-  doc.text(`Ubicación: Zona ${proyecto.zona} · ${proyecto.municipio}`, margin, y);
+  doc.text(`Zona: ${proyecto.zona}`, margin, y);
   y += 6;
   doc.setFontSize(10);
   doc.setTextColor(80, 90, 110);

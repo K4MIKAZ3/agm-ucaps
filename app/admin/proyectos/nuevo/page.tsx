@@ -31,12 +31,8 @@ export default async function NuevoProyectoPage() {
       <h1 style={{ marginBottom: 16 }}>Nuevo proyecto</h1>
       <form className="card form-wide" action={action}>
         <div className="field">
-          <label htmlFor="nombre_corto">Nombre corto *</label>
-          <input id="nombre_corto" name="nombre_corto" required />
-        </div>
-        <div className="field">
-          <label htmlFor="nombre_completo">Nombre completo</label>
-          <input id="nombre_completo" name="nombre_completo" />
+          <label htmlFor="nombre_completo">Nombre del proyecto *</label>
+          <input id="nombre_completo" name="nombre_completo" required />
         </div>
         <UbicacionSelectors />
         <div className="field">

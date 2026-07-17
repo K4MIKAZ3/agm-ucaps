@@ -64,7 +64,6 @@ export default async function AdminProyectosPage({
             <thead>
               <tr>
                 <th>Zona</th>
-                <th>Municipio</th>
                 <th>Proyecto</th>
                 <th>Valor UCAPS</th>
                 <th>Avance</th>
@@ -75,7 +74,7 @@ export default async function AdminProyectosPage({
             <tbody>
               {proyectos.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: "center", padding: 24 }}>
+                  <td colSpan={6} style={{ textAlign: "center", padding: 24 }}>
                     {showArchived ? (
                       "No hay proyectos archivados."
                     ) : (
@@ -92,7 +91,6 @@ export default async function AdminProyectosPage({
                 proyectos.map((p) => (
                   <tr key={p.id} className={showArchived ? "row-inactive" : undefined}>
                     <td>{p.zona}</td>
-                    <td>{p.municipio}</td>
                     <td style={{ fontWeight: 600 }}>{p.nombre_corto}</td>
                     <td>${p.valor_ucaps.toLocaleString("es-CO")}</td>
                     <td>{p.avance_fisico}%</td>

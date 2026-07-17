@@ -27,7 +27,7 @@ export type ProyectoHeader = {
 };
 
 const PROYECTO_LIST_SELECT = `
-  id, nombre_corto, valor_ucaps, avance_fisico_pct, facturado, pendiente_facturar, activo,
+  id, nombre_corto, nombre_completo, valor_ucaps, avance_fisico_pct, facturado, pendiente_facturar, activo,
   municipio_nombre, zona_codigo, fecha_inicio, fecha_terminacion,
   municipios ( nombre, zonas ( codigo ) ),
   estados_proyecto ( nombre )
@@ -60,10 +60,11 @@ function mapProyectoRow(row: Record<string, unknown>): {
     row.zona_codigo != null && Number.isFinite(Number(row.zona_codigo))
       ? Number(row.zona_codigo)
       : (z?.codigo ?? "—");
+  const nombre = String(row.nombre_completo || row.nombre_corto || "—");
 
   const header: ProyectoHeader = {
     id: String(row.id),
-    nombre_corto: String(row.nombre_corto),
+    nombre_corto: nombre,
     municipio,
     zona,
     estado: e?.nombre ?? null,

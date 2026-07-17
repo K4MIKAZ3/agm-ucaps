@@ -109,7 +109,7 @@ export default async function ProyectoDetailPage({
         <div>
           <h1>{proyecto.nombre_corto}</h1>
           <p style={{ color: "#92b4e8", fontSize: 12, marginTop: 4 }}>
-            {proyecto.municipio} · Zona {proyecto.zona} · {proyecto.estado ?? "Sin estado"}
+            Zona {proyecto.zona} · {proyecto.estado ?? "Sin estado"}
             {proyectoRaw?.fecha_inicio && (
               <> · Inicio: {formatProyectoFecha(proyectoRaw.fecha_inicio)}</>
             )}

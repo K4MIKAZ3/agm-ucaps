@@ -25,19 +25,19 @@ export async function createProyecto(formData: FormData) {
   const auth = await requireAdminSession();
   if (!auth.ok) throw new Error(auth.error);
 
-  const municipio_nombre = String(formData.get("municipio_nombre") || "").trim();
-  if (!municipio_nombre) {
-    throw new Error("El municipio es obligatorio");
+  const nombreProyecto = String(formData.get("nombre_completo") || "").trim();
+  if (!nombreProyecto) {
+    throw new Error("El nombre del proyecto es obligatorio");
   }
 
   const avance_calculado_auto = checkboxOn(formData, "avance_calculado_auto");
 
   const payload: Record<string, unknown> = {
-    municipio_nombre,
+    municipio_nombre: null,
     zona_codigo: parseZonaCodigo(formData),
     municipio_id: null,
-    nombre_corto: String(formData.get("nombre_corto")).trim(),
-    nombre_completo: String(formData.get("nombre_completo") || "").trim() || null,
+    nombre_corto: nombreProyecto,
+    nombre_completo: nombreProyecto,
     estado_id: String(formData.get("estado_id") || "") || null,
     estado_operativo: String(formData.get("estado_operativo") || "").trim() || null,
     fecha_inicio: parseDateField(formData, "fecha_inicio"),

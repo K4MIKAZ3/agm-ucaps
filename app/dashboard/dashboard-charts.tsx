@@ -28,7 +28,6 @@ ChartJS.register(
 );
 
 export type ChartProyecto = {
-  municipio: string;
   nombre_corto: string;
   zona: number;
   valor_ucaps: number;
@@ -156,9 +155,7 @@ export default function DashboardCharts({ estados, proyectos, monthlyTrend = [] 
           ) : (
             <Bar
               data={{
-                labels: avanceList.map((p) =>
-                  truncateLabel(p.municipio || p.nombre_corto)
-                ),
+                labels: avanceList.map((p) => truncateLabel(p.nombre_corto)),
                 datasets: [
                   {
                     label: "Avance %",
@@ -309,9 +306,7 @@ export default function DashboardCharts({ estados, proyectos, monthlyTrend = [] 
         <div className="chart-box chart-box-md">
           <Bar
             data={{
-              labels: top5.map((p) =>
-                truncateLabel(p.municipio || p.nombre_corto, 10)
-              ),
+              labels: top5.map((p) => truncateLabel(p.nombre_corto, 10)),
               datasets: [
                 {
                   label: "Facturado",

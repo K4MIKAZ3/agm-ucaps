@@ -25,7 +25,7 @@ export async function exportUbicacionPdf(zonas: ZonaGroup[], filterLabel: string
   doc.rect(0, 0, pageW, 28, "F");
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(14);
-  doc.text("AGM UCAPS — Reporte por ubicación", margin, 12);
+  doc.text("AGM UCAPS — Reporte por zona", margin, 12);
   doc.setFontSize(10);
   doc.text(filterLabel, margin, 20);
 
@@ -45,7 +45,7 @@ export async function exportUbicacionPdf(zonas: ZonaGroup[], filterLabel: string
     doc.setFontSize(9);
     doc.setTextColor(80, 90, 110);
     doc.text(
-      `${zona.municipios.length} municipios · ${zona.proyectos.length} proyectos · Valor ${copExact(sumField(zona.proyectos, "valor_ucaps"))} · Avance prom. ${avgAvance(zona.proyectos)}%`,
+      `${zona.proyectos.length} proyectos · Valor ${copExact(sumField(zona.proyectos, "valor_ucaps"))} · Avance prom. ${avgAvance(zona.proyectos)}%`,
       margin,
       y
     );
@@ -54,9 +54,8 @@ export async function exportUbicacionPdf(zonas: ZonaGroup[], filterLabel: string
     autoTable(doc, {
       startY: y,
       margin: { left: margin, right: margin },
-      head: [["Municipio", "Proyecto", "Valor", "Avance", "Facturado", "Estado"]],
+      head: [["Proyecto", "Valor", "Avance", "Facturado", "Estado"]],
       body: zona.proyectos.map((p) => [
-        p.municipio,
         p.nombre_corto,
         copExact(Number(p.valor_ucaps)),
         `${Math.min(Number(p.avance_fisico ?? 0), 100)}%`,
@@ -82,5 +81,5 @@ export async function exportUbicacionPdf(zonas: ZonaGroup[], filterLabel: string
   }
 
   const stamp = new Date().toISOString().slice(0, 10);
-  doc.save(`AGM-Ubicacion-${safeFilenamePart(filterLabel) || "reporte"}-${stamp}.pdf`);
+  doc.save(`AGM-Zona-${safeFilenamePart(filterLabel) || "reporte"}-${stamp}.pdf`);
 }

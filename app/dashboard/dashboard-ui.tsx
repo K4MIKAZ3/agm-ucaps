@@ -72,7 +72,7 @@ export function NotificationBell({
                   <span className="dash-notif-item-icon">{ALERT_ICONS[a.kind]}</span>
                   <div>
                     <div className="dash-notif-item-title">
-                      {a.nombre} · Z{a.zona} {a.municipio}
+                      {a.nombre} · Z{a.zona}
                     </div>
                     <div className="dash-notif-item-msg">{a.message}</div>
                   </div>

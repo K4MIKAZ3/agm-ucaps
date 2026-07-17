@@ -69,7 +69,6 @@ function ProyectoTable({
         <thead>
           <tr>
             <th>Zona</th>
-            <th>Municipio</th>
             <th>Proyecto</th>
             <th>Ítems</th>
             <th>Valor UCAPS</th>
@@ -85,7 +84,7 @@ function ProyectoTable({
         <tbody>
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={12} style={{ textAlign: "center", padding: 24 }}>
+              <td colSpan={11} style={{ textAlign: "center", padding: 24 }}>
                 Sin proyectos que coincidan con los filtros.
               </td>
             </tr>
@@ -96,7 +95,6 @@ function ProyectoTable({
               return (
                 <tr key={r.id} className={hasAlert ? "row-alert" : undefined}>
                   <td style={{ textAlign: "center", fontWeight: 700 }}>{r.zona}</td>
-                  <td style={{ fontWeight: 600 }}>{r.municipio}</td>
                   <td style={{ fontWeight: 600 }}>{r.nombre_corto}</td>
                   <td style={{ textAlign: "center" }}>{itemCounts[r.id] ?? 0}</td>
                   <td>{cop(Number(r.valor_ucaps))}</td>
@@ -211,7 +209,6 @@ function GeneralView({
           noIniciado: Number(kpi.proyectos_no_iniciados ?? 0),
         }}
         proyectos={proyectos.map((r) => ({
-          municipio: r.municipio,
           nombre_corto: r.nombre_corto,
           zona: r.zona,
           valor_ucaps: Number(r.valor_ucaps),
@@ -252,7 +249,6 @@ function UbicacionView({
                 Zona {zona.zona} — {zona.zona_nombre}
               </h2>
               <p>
-                {zona.municipios.length} municipio{zona.municipios.length !== 1 ? "s" : ""} ·{" "}
                 {zona.proyectos.length} proyecto{zona.proyectos.length !== 1 ? "s" : ""}
               </p>
             </div>
@@ -276,36 +272,24 @@ function UbicacionView({
             </div>
           </header>
 
-          {zona.municipios.map((muni) => (
-            <div key={muni.municipio_id} className="loc-muni-block">
-              <div className="loc-muni-header">
-                <h3>{muni.municipio}</h3>
-                <div className="loc-muni-stats">
-                  <span>{muni.proyectos.length} proyecto{muni.proyectos.length !== 1 ? "s" : ""}</span>
-                  <span>{cop(sumField(muni.proyectos, "valor_ucaps"))}</span>
-                  <span>Avance {avgAvance(muni.proyectos)}%</span>
-                </div>
-              </div>
-              <div className="loc-proj-grid">
-                {muni.proyectos.map((p) => {
-                  const av = Math.min(Number(p.avance_fisico ?? 0), 100);
-                  return (
-                    <article key={p.id} className="loc-proj-card">
-                      <div className="loc-proj-top">
-                        <strong>{p.nombre_corto}</strong>
-                        <span className={badgeClass(p.estado)}>{p.estado ?? "—"}</span>
-                      </div>
-                      <div className="loc-proj-metrics">
-                        <span>{cop(Number(p.valor_ucaps))}</span>
-                        <span>Fac. {cop(Number(p.facturado))}</span>
-                      </div>
-                      <ProgressBar pct={av} />
-                    </article>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
+          <div className="loc-proj-grid">
+            {zona.proyectos.map((p) => {
+              const av = Math.min(Number(p.avance_fisico ?? 0), 100);
+              return (
+                <article key={p.id} className="loc-proj-card">
+                  <div className="loc-proj-top">
+                    <strong>{p.nombre_corto}</strong>
+                    <span className={badgeClass(p.estado)}>{p.estado ?? "—"}</span>
+                  </div>
+                  <div className="loc-proj-metrics">
+                    <span>{cop(Number(p.valor_ucaps))}</span>
+                    <span>Fac. {cop(Number(p.facturado))}</span>
+                  </div>
+                  <ProgressBar pct={av} />
+                </article>
+              );
+            })}
+          </div>
         </section>
       ))}
     </div>
@@ -324,8 +308,8 @@ function ProyectoDetailView({
   const sorted = useMemo(
     () =>
       [...proyectos].sort((a, b) =>
-        `${a.zona}-${a.municipio}-${a.nombre_corto}`.localeCompare(
-          `${b.zona}-${b.municipio}-${b.nombre_corto}`,
+        `${a.zona}-${a.nombre_corto}`.localeCompare(
+          `${b.zona}-${b.nombre_corto}`,
           "es"
         )
       ),
@@ -342,7 +326,6 @@ function ProyectoDetailView({
     return sorted.filter(
       (p) =>
         p.nombre_corto.toLowerCase().includes(q) ||
-        p.municipio.toLowerCase().includes(q) ||
         String(p.zona).includes(q)
     );
   }, [sorted, query]);
@@ -377,7 +360,7 @@ function ProyectoDetailView({
         <input
           type="search"
           className="dash-proj-search"
-          placeholder="Buscar por nombre, municipio o zona…"
+          placeholder="Buscar por nombre o zona…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
@@ -392,9 +375,7 @@ function ProyectoDetailView({
                 onClick={() => setSelectedId(p.id)}
               >
                 <span className="dash-proj-item-name">{p.nombre_corto}</span>
-                <span className="dash-proj-item-loc">
-                  Z{p.zona} · {p.municipio}
-                </span>
+                <span className="dash-proj-item-loc">Z{p.zona}</span>
                 <span className="dash-proj-item-av">{pAv}% avance</span>
               </button>
             );
@@ -405,9 +386,7 @@ function ProyectoDetailView({
       <div className="dash-proj-detail">
         <header className="proj-detail-header">
           <div>
-            <p className="proj-detail-loc">
-              Zona {proyecto.zona} · {proyecto.municipio}
-            </p>
+            <p className="proj-detail-loc">Zona {proyecto.zona}</p>
             <h2>{proyecto.nombre_corto}</h2>
             {proyecto.estado_operativo && (
               <p className="proj-detail-note">{proyecto.estado_operativo}</p>
@@ -639,7 +618,7 @@ export default function DashboardViews({
               {exporting
                 ? "Generando PDF…"
                 : view === "ubicacion"
-                  ? "Exportar ubicación PDF"
+                  ? "Exportar zona PDF"
                   : "Exportar reporte PDF"}
             </button>
           )}
@@ -673,7 +652,7 @@ export default function DashboardViews({
             className={`dash-tab${view === "ubicacion" ? " active" : ""}`}
             onClick={() => setView("ubicacion")}
           >
-            Por ubicación
+            Por zona
           </button>
           <button
             type="button"
@@ -689,7 +668,7 @@ export default function DashboardViews({
         <input
           type="search"
           className="dash-proj-search"
-          placeholder="Buscar en todo el dashboard: proyecto, municipio, zona, estado…"
+          placeholder="Buscar en todo el dashboard: proyecto, zona, estado…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />

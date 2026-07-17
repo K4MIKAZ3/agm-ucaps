@@ -165,10 +165,9 @@ export async function exportDashboardPdf({
   autoTable(doc, {
     startY: y + 2,
     margin: { left: margin, right: margin },
-    head: [["Zona", "Municipio", "Proyecto", "Ít.", "Valor", "Avance", "Facturado", "Estado", "Actualizado"]],
+    head: [["Zona", "Proyecto", "Ít.", "Valor", "Avance", "Facturado", "Estado", "Actualizado"]],
     body: proyectos.map((p) => [
       String(p.zona),
-      p.municipio,
       p.nombre_corto,
       String(itemCounts[p.id] ?? 0),
       copExact(Number(p.valor_ucaps)),
@@ -182,10 +181,10 @@ export async function exportDashboardPdf({
     alternateRowStyles: { fillColor: [242, 246, 252] },
     columnStyles: {
       0: { cellWidth: 10 },
-      2: { cellWidth: 28 },
-      3: { halign: "right" },
-      4: { halign: "center" },
-      5: { halign: "right" },
+      1: { cellWidth: 36 },
+      2: { halign: "right" },
+      3: { halign: "center" },
+      4: { halign: "right" },
     },
   });
 
