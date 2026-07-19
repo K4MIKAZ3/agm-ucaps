@@ -14,6 +14,7 @@ import {
 } from "chart.js";
 import { Doughnut, Bar, Line } from "react-chartjs-2";
 import type { MonthlyPortfolioPoint } from "@/lib/dashboard-snapshots";
+import { copExact } from "@/lib/dashboard-utils";
 
 ChartJS.register(
   ArcElement,
@@ -87,7 +88,7 @@ export default function DashboardCharts({ estados, proyectos, monthlyTrend = [] 
     const sum = proyectos
       .filter((p) => p.zona === z)
       .reduce((s, p) => s + Number(p.valor_ucaps ?? 0), 0);
-    return +(sum / 1e9).toFixed(1);
+    return sum;
   });
 
   const top5 = [...proyectos]
@@ -275,7 +276,7 @@ export default function DashboardCharts({ estados, proyectos, monthlyTrend = [] 
               scales: {
                 y: {
                   ticks: {
-                    callback: (v) => `$${v}B`,
+                    callback: (v) => copExact(Number(v)),
                     font: { size: 9 },
                     color: tickColor,
                   },
@@ -310,16 +311,14 @@ export default function DashboardCharts({ estados, proyectos, monthlyTrend = [] 
               datasets: [
                 {
                   label: "Facturado",
-                  data: top5.map((p) => +(Number(p.facturado) / 1e9).toFixed(2)),
+                  data: top5.map((p) => Number(p.facturado)),
                   backgroundColor: "#1a5dc8",
                   borderRadius: 4,
                   borderSkipped: false,
                 },
                 {
                   label: "Pendiente",
-                  data: top5.map((p) =>
-                    +(Number(p.pendiente_facturar) / 1e9).toFixed(2)
-                  ),
+                  data: top5.map((p) => Number(p.pendiente_facturar)),
                   backgroundColor: "#92b4e8",
                   borderRadius: 4,
                   borderSkipped: false,
@@ -333,7 +332,7 @@ export default function DashboardCharts({ estados, proyectos, monthlyTrend = [] 
               scales: {
                 y: {
                   ticks: {
-                    callback: (v) => `$${v}B`,
+                    callback: (v) => copExact(Number(v)),
                     font: { size: 9 },
                     color: tickColor,
                   },

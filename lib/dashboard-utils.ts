@@ -46,11 +46,7 @@ export type DashboardKpi = {
 };
 
 export function cop(n: number) {
-  if (!n) return "—";
-  if (n >= 1e12) return `$${(n / 1e12).toFixed(2)} B`;
-  if (n >= 1e9) return `$${(n / 1e9).toFixed(1)} B`;
-  if (n >= 1e6) return `$${(n / 1e6).toFixed(0)} M`;
-  return `$${n.toLocaleString("es-CO")}`;
+  return copExact(n);
 }
 
 export function copExact(n: number) {
