@@ -80,6 +80,10 @@ function deltaClass(n: number) {
   return "delta-zero";
 }
 
+function capPercent(n: number) {
+  return Math.min(Math.max(Number(n) || 0, 0), 100);
+}
+
 export default function PresentationBoard({ cortes, canManage }: Props) {
   const defaults = pickDefaultCortes(cortes);
   const [cortesList, setCortesList] = useState(cortes);
@@ -243,7 +247,7 @@ export default function PresentationBoard({ cortes, canManage }: Props) {
     if (!data) return [];
     return [...data.comparacion]
       .filter((r) => r.avanceActual > 0)
-      .sort((a, b) => b.avanceActual - a.avanceActual)
+      .sort((a, b) => capPercent(b.avanceActual) - capPercent(a.avanceActual))
       .slice(0, 8);
   }, [data]);
 
@@ -389,7 +393,7 @@ export default function PresentationBoard({ cortes, canManage }: Props) {
                 datasets: [
                   {
                     label: "Avance %",
-                    data: topAvance.map((r) => r.avanceActual),
+                    data: topAvance.map((r) => capPercent(r.avanceActual)),
                     backgroundColor: "#2a78d6",
                     borderRadius: 4,
                   },
