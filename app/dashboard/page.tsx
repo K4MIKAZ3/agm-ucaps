@@ -184,19 +184,13 @@ export default async function DashboardPage() {
 
     return (
       <main className="wrap">
-        <div className="topbar">
-          <div className="topbar-brand">
+        <div className="topbar dash-topbar">
+          <div className="dash-topbar-title">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={AGM_LOGO} alt="AGM Desarrollos" className="brand-logo" />
-            <div className="topbar-brand-text">
-              <h1>ESTADO DE PROYECTOS AGM</h1>
-              <p className="topbar-sub">
-                {profile?.nombre ?? profile?.email} · Dashboard Gerencial ·{" "}
-                {profile?.rol ?? "usuario"}
-              </p>
-            </div>
+            <h1>ESTADO DE PROYECTOS AGM</h1>
           </div>
-          <div className="topbar-actions">
+          <div className="topbar-actions dash-topbar-actions">
             {canViewProyectosAdmin(profile?.rol) && (
               <Link className="btn-link" href="/admin/proyectos">
                 {canEditProyectoContent(profile?.rol) ? "Gestionar proyectos" : "Ver proyectos"}
@@ -212,6 +206,9 @@ export default async function DashboardPage() {
             )}
             <LogoutButton />
           </div>
+          <p className="topbar-sub dash-topbar-meta">
+            {profile?.nombre ?? profile?.email} · Dashboard Gerencial · {profile?.rol ?? "usuario"}
+          </p>
         </div>
 
         {!profile && !loadError && (

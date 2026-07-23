@@ -192,6 +192,41 @@ button {
   white-space: nowrap;
 }
 
+.dash-topbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "title actions"
+    "meta actions";
+  align-items: center;
+  column-gap: 14px;
+  row-gap: 6px;
+}
+
+.dash-topbar-title {
+  grid-area: title;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.dash-topbar-title h1 {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.dash-topbar-actions {
+  grid-area: actions;
+  justify-content: flex-end;
+}
+
+.dash-topbar-meta {
+  grid-area: meta;
+  margin: 0;
+}
+
 .brand-logo {
   height: 56px;
   width: auto;
@@ -1507,24 +1542,57 @@ body {
   }
 
   .topbar h1,
-  .topbar-brand-text h1 {
-    font-size: 16px;
+  .topbar-brand-text h1,
+  .dash-topbar-title h1 {
+    font-size: 17px;
   }
 
+  /* Dashboard header: título → botones → sesión, mismo ancho */
+  .dash-topbar {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .dash-topbar-title {
+    width: 100%;
+    gap: 10px;
+  }
+
+  .dash-topbar-title h1 {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .dash-topbar-actions,
   .topbar-actions {
     width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 8px;
   }
 
+  .dash-topbar-actions .btn-link,
+  .dash-topbar-actions .btn-logout,
+  .dash-topbar-actions .btn,
   .topbar-actions .btn-link,
   .topbar-actions .btn-logout,
   .topbar-actions .btn,
   .topbar-actions .btn-xs {
+    width: 100%;
     min-height: 44px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 10px 14px;
+    padding: 10px 12px;
+    text-align: center;
+  }
+
+  .dash-topbar-meta {
+    width: 100%;
+    margin: 0;
+    order: 0;
   }
 
   .admin-nav {
@@ -1560,18 +1628,28 @@ body {
   .dash-toolbar {
     flex-direction: column;
     align-items: stretch;
+    gap: 10px;
   }
 
   .dash-toolbar-actions {
     width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
   }
 
   .dash-toolbar-actions .btn-toolbar,
-  .dash-toolbar-actions .btn {
-    flex: 1 1 calc(50% - 8px);
+  .dash-toolbar-actions .btn,
+  .dash-toolbar-actions .dash-filter-dropdown {
+    width: 100%;
     min-height: 44px;
     white-space: normal;
     text-align: center;
+  }
+
+  .dash-toolbar-actions .dash-filter-dropdown > .btn-toolbar,
+  .dash-toolbar-actions .dash-filter-dropdown > .btn {
+    width: 100%;
   }
 
   .dash-tabs {
@@ -1589,6 +1667,11 @@ body {
   .dash-global-search {
     flex-direction: column;
     align-items: stretch;
+    width: 100%;
+  }
+
+  .dash-global-search .dash-proj-search {
+    width: 100%;
   }
 
   .dash-proj-search {
