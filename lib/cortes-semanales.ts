@@ -72,6 +72,33 @@ export function formatCorteDate(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
+function parseIsoDateUTC(fecha: string): Date {
+  return new Date(`${fecha}T00:00:00.000Z`);
+}
+
+function isoYearAndWeek(fecha: string): { anio: number; semana_iso: number } {
+  const d = parseIsoDateUTC(fecha);
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+  const anio = d.getUTCFullYear();
+  const yearStart = new Date(Date.UTC(anio, 0, 1));
+  const semana_iso = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  return { anio, semana_iso };
+}
+
+function corteNombre(fecha: string) {
+  return `Corte ${parseIsoDateUTC(fecha).toLocaleDateString("es-CO", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  })}`;
+}
+
+function firstRelation<T>(value: T | T[] | null | undefined): T | null {
+  if (Array.isArray(value)) return value[0] ?? null;
+  return value ?? null;
+}
+
 export function summarizeSnapshot(rows: SnapshotSemanalRow[]): CortePortfolioSummary {
   if (rows.length === 0) {
     return {
@@ -219,14 +246,128 @@ export async function buildWeeklyTrend(
 
 export async function crearCorteSemanal(
   db: SupabaseClient,
-  fecha?: string
+  fecha?: string,
+  userId?: string
 ): Promise<string> {
-  const { data, error } = await db.rpc("crear_corte_semanal", {
-    p_fecha: fecha ?? formatCorteDate(new Date()),
+  const fecha_corte = fecha ?? formatCorteDate(new Date());
+  const { anio, semana_iso } = isoYearAndWeek(fecha_corte);
+  const nombre = corteNombre(fecha_corte);
+
+  const { data: existingByDate, error: existingByDateError } = await db
+    .from("cortes_semanales")
+    .select("id")
+    .eq("fecha_corte", fecha_corte)
+    .maybeSingle();
+
+  if (existingByDateError) throw new Error(existingByDateError.message);
+
+  let corteId = existingByDate?.id ? String(existingByDate.id) : null;
+
+  if (corteId) {
+    const { error } = await db
+      .from("cortes_semanales")
+      .update({ anio, semana_iso, nombre })
+      .eq("id", corteId);
+    if (error) throw new Error(error.message);
+  } else {
+    const { data, error } = await db
+      .from("cortes_semanales")
+      .insert({ fecha_corte, anio, semana_iso, nombre, created_by: userId ?? null })
+      .select("id")
+      .single();
+
+    if (error && error.code === "23505") {
+      // Legacy schema had one cut per ISO week. Reuse that row if the date is new
+      // but the week already exists, so saving still works before migration 19 runs.
+      const { data: existingByWeek, error: existingByWeekError } = await db
+        .from("cortes_semanales")
+        .select("id")
+        .eq("anio", anio)
+        .eq("semana_iso", semana_iso)
+        .maybeSingle();
+      if (existingByWeekError) throw new Error(existingByWeekError.message);
+      if (!existingByWeek?.id) throw new Error(error.message);
+
+      corteId = String(existingByWeek.id);
+      const { error: updateError } = await db
+        .from("cortes_semanales")
+        .update({ fecha_corte, nombre })
+        .eq("id", corteId);
+      if (updateError) throw new Error(updateError.message);
+    } else if (error) {
+      throw new Error(error.message);
+    } else {
+      corteId = String(data.id);
+    }
+  }
+
+  if (!corteId) throw new Error("No se pudo crear el corte.");
+
+  const { error: deleteError } = await db
+    .from("proyecto_snapshot_semanal")
+    .delete()
+    .eq("corte_semanal_id", corteId);
+  if (deleteError) throw new Error(deleteError.message);
+
+  const { data: proyectos, error: proyectosError } = await db
+    .from("proyectos")
+    .select(
+      `
+        id, nombre_corto, nombre_completo, municipio_nombre, zona_codigo,
+        valor_ucaps, facturado, pendiente_facturar, avance_fisico_pct, activo,
+        municipios ( nombre, zonas ( codigo ) ),
+        estados_proyecto ( codigo, nombre )
+      `
+    )
+    .eq("activo", true);
+
+  if (proyectosError) throw new Error(proyectosError.message);
+
+  const snapshots = (proyectos ?? []).map((row) => {
+    const record = row as Record<string, unknown>;
+    const municipio = firstRelation(
+      record.municipios as
+        | { nombre: string; zonas?: { codigo: number } | { codigo: number }[] | null }
+        | { nombre: string; zonas?: { codigo: number } | { codigo: number }[] | null }[]
+        | null
+    );
+    const zona = firstRelation(municipio?.zonas);
+    const estado = firstRelation(
+      record.estados_proyecto as
+        | { codigo: string | null; nombre: string | null }
+        | { codigo: string | null; nombre: string | null }[]
+        | null
+    );
+
+    return {
+      corte_semanal_id: corteId,
+      proyecto_id: String(record.id),
+      nombre_corto: String(record.nombre_completo || record.nombre_corto || "—"),
+      municipio:
+        record.municipio_nombre != null && String(record.municipio_nombre).trim()
+          ? String(record.municipio_nombre)
+          : (municipio?.nombre ?? null),
+      zona:
+        record.zona_codigo != null && Number.isFinite(Number(record.zona_codigo))
+          ? Number(record.zona_codigo)
+          : (zona?.codigo ?? null),
+      avance_fisico_pct: Number(record.avance_fisico_pct ?? 0),
+      valor_ucaps: Number(record.valor_ucaps ?? 0),
+      facturado: Number(record.facturado ?? 0),
+      pendiente_facturar: Number(record.pendiente_facturar ?? 0),
+      estado_codigo: estado?.codigo ?? null,
+      estado_nombre: estado?.nombre ?? null,
+    };
   });
 
-  if (error) throw new Error(error.message);
-  return String(data);
+  if (snapshots.length > 0) {
+    const { error: snapshotError } = await db
+      .from("proyecto_snapshot_semanal")
+      .insert(snapshots);
+    if (snapshotError) throw new Error(snapshotError.message);
+  }
+
+  return corteId;
 }
 
 export async function deleteCorteSemanal(db: SupabaseClient, corteId: string) {

@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { requireManagerRlsSession } from "@/lib/admin-session";
+import { requireAdminSession } from "@/lib/admin-session";
 import { crearCorteSemanal, formatCorteDate } from "@/lib/cortes-semanales";
 import { isIsoDate, safeApiError } from "@/lib/security";
 
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
-  const auth = await requireManagerRlsSession();
+  const auth = await requireAdminSession();
   if (!auth.ok) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Fecha de corte inválida" }, { status: 400 });
     }
 
-    const id = await crearCorteSemanal(auth.session.db, fecha);
+    const id = await crearCorteSemanal(auth.session.db, fecha, auth.session.userId);
     return NextResponse.json({ id, message: "Corte guardado" });
   } catch (e) {
     return NextResponse.json({ error: safeApiError(e, "Error al crear corte") }, { status: 500 });
