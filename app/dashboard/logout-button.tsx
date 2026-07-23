@@ -10,7 +10,7 @@ export default function LogoutButton() {
   }
 
   return (
-    <button className="btn" style={{ width: "auto" }} onClick={logout} type="button">
+    <button className="btn btn-logout" onClick={logout} type="button">
       Salir
     </button>
   );

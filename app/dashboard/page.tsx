@@ -185,18 +185,18 @@ export default async function DashboardPage() {
     return (
       <main className="wrap">
         <div className="topbar">
-          <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+          <div className="topbar-brand">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={AGM_LOGO} alt="AGM Desarrollos" className="brand-logo" />
-            <div>
+            <div className="topbar-brand-text">
               <h1>ESTADO DE PROYECTOS AGM</h1>
-              <p style={{ color: "#92b4e8", fontSize: 12, marginTop: 4 }}>
+              <p className="topbar-sub">
                 {profile?.nombre ?? profile?.email} · Dashboard Gerencial ·{" "}
                 {profile?.rol ?? "usuario"}
               </p>
             </div>
           </div>
-          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <div className="topbar-actions">
             {canViewProyectosAdmin(profile?.rol) && (
               <Link className="btn-link" href="/admin/proyectos">
                 {canEditProyectoContent(profile?.rol) ? "Gestionar proyectos" : "Ver proyectos"}

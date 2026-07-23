@@ -40,7 +40,7 @@ export default async function AdminProyectosPage({
               : "Consulta, edita y alimenta proyectos UCAPS según tu rol"}
           </p>
         </div>
-        <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+        <div className="topbar-actions">
           {showArchived ? (
             <Link className="btn-link" href="/admin/proyectos">
               ← Proyectos activos

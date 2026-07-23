@@ -26,17 +26,19 @@ export default async function AdminLayout({
   return (
     <div className="wrap">
       <div className="topbar" style={{ marginBottom: 12 }}>
-        <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+        <div className="topbar-brand">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={AGM_LOGO} alt="AGM Desarrollos" className="brand-logo" />
-          <div>
+          <div className="topbar-brand-text">
             <h1 style={{ fontSize: 18 }}>Administración AGM</h1>
-            <p style={{ color: "#92b4e8", fontSize: 12, marginTop: 4 }}>Proyectos UCAPS</p>
+            <p className="topbar-sub">Proyectos UCAPS</p>
           </div>
         </div>
-        <Link className="btn-link" href="/dashboard">
-          Ir al dashboard
-        </Link>
+        <div className="topbar-actions">
+          <Link className="btn-link" href="/dashboard">
+            Ir al dashboard
+          </Link>
+        </div>
       </div>
       <nav className="admin-nav">
         <Link href="/dashboard">Dashboard</Link>
