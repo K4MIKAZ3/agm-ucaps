@@ -1844,15 +1844,13 @@ body {
     grid-template-columns: 1fr;
   }
 
-  .dash-toolbar-actions .btn-toolbar,
-  .dash-toolbar-actions .btn {
-    flex: 1 1 100%;
+  .dash-toolbar-actions {
+    grid-template-columns: 1fr;
   }
 
-  .topbar-actions .btn-link,
-  .topbar-actions .btn-logout {
-    flex: 1 1 calc(50% - 8px);
-    text-align: center;
+  .dash-topbar-actions,
+  .topbar-actions {
+    grid-template-columns: 1fr;
   }
 
   .brand-logo {
@@ -1860,11 +1858,13 @@ body {
   }
 
   .topbar h1,
-  .topbar-brand-text h1 {
+  .topbar-brand-text h1,
+  .dash-topbar-title h1 {
     font-size: 15px;
   }
 
-  .topbar-sub {
+  .topbar-sub,
+  .dash-topbar-meta {
     font-size: 11px;
   }
 }
