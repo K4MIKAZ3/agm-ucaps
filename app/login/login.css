@@ -450,3 +450,45 @@ body:has(.login-screen) {
     padding: 32px 24px 48px;
   }
 }
+
+@media (max-width: 480px) {
+  .login-panel-left {
+    padding: 24px 18px 20px;
+  }
+
+  .login-hero {
+    margin-top: 20px;
+  }
+
+  .login-hero h1 {
+    font-size: 22px;
+    line-height: 1.25;
+  }
+
+  .login-hero p {
+    font-size: 13px;
+  }
+
+  .login-panel-right {
+    padding: 24px 16px calc(36px + env(safe-area-inset-bottom));
+  }
+
+  .login-form-card {
+    padding: 0;
+    box-shadow: none;
+  }
+
+  .login-input-wrap input {
+    font-size: 16px;
+    min-height: 48px;
+  }
+
+  .login-btn-enter {
+    min-height: 48px;
+  }
+
+  .login-toggle-pw {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}

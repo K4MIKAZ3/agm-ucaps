@@ -416,14 +416,14 @@ export default function PresentationBoard({ cortes, canManage }: Props) {
   return (
     <div className={fullscreen ? "presentation-fullscreen" : undefined}>
       <div className="topbar presentation-topbar">
-        <div>
+        <div className="topbar-brand-text">
           <h1>Modo presentación</h1>
-          <p style={{ color: "#92b4e8", fontSize: 12, marginTop: 4 }}>
+          <p className="topbar-sub">
             Compara cortes guardados y conserva el historial para consultas futuras. Arrastra los
             paneles para ordenarlos.
           </p>
         </div>
-        <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+        <div className="topbar-actions">
           <button
             type="button"
             className="btn-xs btn-ghost"

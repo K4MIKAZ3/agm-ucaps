@@ -152,7 +152,79 @@ button {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   margin-bottom: 18px;
+}
+
+.topbar-brand {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  min-width: 0;
+}
+
+.topbar-brand-text {
+  min-width: 0;
+}
+
+.topbar-brand-text h1,
+.topbar h1 {
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.topbar-sub {
+  color: #92b4e8;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.btn-logout {
+  width: auto;
+  white-space: nowrap;
+}
+
+.dash-topbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "title actions"
+    "meta actions";
+  align-items: center;
+  column-gap: 14px;
+  row-gap: 6px;
+}
+
+.dash-topbar-title {
+  grid-area: title;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.dash-topbar-title h1 {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.dash-topbar-actions {
+  grid-area: actions;
+  justify-content: flex-end;
+}
+
+.dash-topbar-meta {
+  grid-area: meta;
+  margin: 0;
 }
 
 .brand-logo {
@@ -1436,5 +1508,363 @@ tbody tr:nth-child(even) {
 @media (max-width: 768px) {
   .pres-kpi-grid {
     grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ─── Android / phone responsive ──────────────────────────────────────────── */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  overflow-x: clip;
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+@media (max-width: 768px) {
+  .wrap {
+    padding: 14px 12px calc(20px + env(safe-area-inset-bottom));
+  }
+
+  .topbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .topbar-brand {
+    gap: 10px;
+  }
+
+  .brand-logo {
+    height: 44px;
+  }
+
+  .topbar h1,
+  .topbar-brand-text h1,
+  .dash-topbar-title h1 {
+    font-size: 17px;
+  }
+
+  /* Dashboard header: título → botones → sesión, mismo ancho */
+  .dash-topbar {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .dash-topbar-title {
+    width: 100%;
+    gap: 10px;
+  }
+
+  .dash-topbar-title h1 {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .dash-topbar-actions,
+  .topbar-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .dash-topbar-actions .btn-link,
+  .dash-topbar-actions .btn-logout,
+  .dash-topbar-actions .btn,
+  .topbar-actions .btn-link,
+  .topbar-actions .btn-logout,
+  .topbar-actions .btn,
+  .topbar-actions .btn-xs {
+    width: 100%;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 12px;
+    text-align: center;
+  }
+
+  .dash-topbar-meta {
+    width: 100%;
+    margin: 0;
+    order: 0;
+  }
+
+  .admin-nav {
+    gap: 10px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 10px;
+    scrollbar-width: thin;
+  }
+
+  .admin-nav a {
+    white-space: nowrap;
+    padding: 8px 4px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .kpi-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .kpi {
+    padding: 12px;
+  }
+
+  .kpi-val {
+    font-size: 16px;
+    word-break: break-word;
+  }
+
+  .dash-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .dash-toolbar-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .dash-toolbar-actions .btn-toolbar,
+  .dash-toolbar-actions .btn,
+  .dash-toolbar-actions .dash-filter-dropdown {
+    width: 100%;
+    min-height: 44px;
+    white-space: normal;
+    text-align: center;
+  }
+
+  .dash-toolbar-actions .dash-filter-dropdown > .btn-toolbar,
+  .dash-toolbar-actions .dash-filter-dropdown > .btn {
+    width: 100%;
+  }
+
+  .dash-tabs {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .dash-tab {
+    min-height: 44px;
+    width: 100%;
+  }
+
+  .dash-global-search {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .dash-global-search .dash-proj-search {
+    width: 100%;
+  }
+
+  .dash-proj-search {
+    font-size: 16px; /* evita zoom automático en iOS/Android Chrome */
+    min-height: 44px;
+  }
+
+  .dash-filter-panel {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    top: auto;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    width: auto;
+    max-width: none;
+    min-width: 0;
+    max-height: min(70vh, 520px);
+  }
+
+  .dash-filter-option {
+    min-height: 44px;
+  }
+
+  .dash-notif-root {
+    right: max(12px, env(safe-area-inset-right));
+    bottom: max(12px, env(safe-area-inset-bottom));
+  }
+
+  .dash-notif-fab {
+    width: 56px;
+    height: 56px;
+  }
+
+  .dash-notif-panel {
+    width: min(100vw - 24px, 380px);
+    max-height: min(55vh, 400px);
+  }
+
+  .table-card,
+  .chart-card,
+  .card {
+    padding: 12px;
+  }
+
+  .table-scroll {
+    margin: 0 -4px;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  table {
+    font-size: 11px;
+    min-width: 560px;
+  }
+
+  thead th,
+  tbody td {
+    padding: 10px 8px;
+  }
+
+  .cell-muted {
+    white-space: normal;
+  }
+
+  .btn-xs {
+    min-height: 36px;
+    padding: 8px 12px;
+  }
+
+  .proyecto-actions,
+  .item-row-actions,
+  .item-edit-actions,
+  .proj-detail-actions {
+    width: 100%;
+  }
+
+  .proyecto-actions .btn-xs,
+  .item-row-actions .btn-xs,
+  .proj-detail-actions .btn-link,
+  .proj-detail-actions .btn {
+    min-height: 40px;
+  }
+
+  .field input,
+  .field select,
+  .form-wide select,
+  .form-wide textarea,
+  .input-sm {
+    font-size: 16px;
+    min-height: 44px;
+  }
+
+  .form-wide textarea {
+    min-height: 96px;
+  }
+
+  .btn,
+  .btn-inline,
+  .btn-link {
+    min-height: 44px;
+  }
+
+  .btn-inline {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .presentation-fullscreen {
+    padding: 12px 12px calc(28px + env(safe-area-inset-bottom));
+  }
+
+  .presentation-widget-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .presentation-controls .btn-inline {
+    width: 100%;
+  }
+
+  .pres-kpi-val {
+    font-size: 20px;
+    word-break: break-word;
+  }
+
+  .pres-table-wrap {
+    max-height: none;
+  }
+
+  .loc-proj-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-box-sm,
+  .chart-box-md {
+    height: 180px;
+  }
+
+  .chart-box-lg {
+    height: 220px;
+  }
+
+  .status-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .user-edit-form {
+    grid-template-columns: 1fr;
+  }
+
+  .field-span-2 {
+    grid-column: span 1;
+  }
+}
+
+@media (max-width: 480px) {
+  .wrap {
+    padding: 12px 10px calc(18px + env(safe-area-inset-bottom));
+  }
+
+  .kpi-row {
+    grid-template-columns: 1fr;
+  }
+
+  .pres-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .status-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dash-toolbar-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .dash-topbar-actions,
+  .topbar-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .brand-logo {
+    height: 40px;
+  }
+
+  .topbar h1,
+  .topbar-brand-text h1,
+  .dash-topbar-title h1 {
+    font-size: 15px;
+  }
+
+  .topbar-sub,
+  .dash-topbar-meta {
+    font-size: 11px;
   }
 }
