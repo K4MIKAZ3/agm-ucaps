@@ -130,7 +130,7 @@ export default async function ProyectoDetailPage({
             )}
           </p>
         </div>
-        <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+        <div className="topbar-actions">
           <ProyectoActions
             proyectoId={id}
             nombre={proyecto.nombre_corto}
